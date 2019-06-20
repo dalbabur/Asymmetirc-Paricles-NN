@@ -1,4 +1,6 @@
 for i in range(1):
+    import sys
+    sys.path.insert(0, './code/UNET/')
     from image import ImageDataGenerator, array_to_img, img_to_array, load_img
     import matplotlib.pyplot as plt
     import cv2

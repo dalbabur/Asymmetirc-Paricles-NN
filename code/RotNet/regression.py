@@ -1,5 +1,7 @@
 for i in range(1):
     import os
+    import sys
+    sys.path.insert(0, './code/RotNet/')
     from keras.callbacks import ModelCheckpoint
     from keras.layers import Dense, Dropout, Flatten, Input
     from keras.layers import Conv2D, MaxPooling2D
@@ -7,11 +9,9 @@ for i in range(1):
 
     from utils import angle_error_regression, RotNetDataGenerator, binarize_images
 
-
 # we don't need the labels indicating the digit value, so we only load the images
-path = 'C:/Users/Diego/Documents/MATLAB/JHU/HUR/asymmetricParticles/code/RotNet/data/stock'
+path = 'C:/Users/Diego/Documents/MATLAB/JHU/HUR/asymmetricParticles/AsymParticles/code/RotNet/data/stock'
 imgs = [os.path.join(path,os.path.relpath(x)) for x in os.listdir(path)]
-
 model_name = 'rotnet_mnist_regression'
 
 # number of convolutional filters to use
@@ -38,9 +38,6 @@ x = Dense(1, activation='sigmoid')(x)
 
 model = Model(inputs=input, outputs=x)
 
-model.summary()
-
-
 # model compilation
 model.compile(loss=angle_error_regression,
               optimizer='adam')
@@ -61,7 +58,8 @@ model.fit_generator(
         batch_size=batch_size,
         one_hot=False,
         shuffle=True,
-        color_mode = 'grayscale'
+        color_mode = 'grayscale',
+        preprocess_func=binarize_images
     ),
     steps_per_epoch=nb_train_samples / batch_size,
     epochs=nb_epoch,
