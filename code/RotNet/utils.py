@@ -42,8 +42,8 @@ def binarize_images(x):
     0 the values below 0.1 and 1 the values above 0.1.
     """
     x /= 255
-    x[x >= 0.1] = 1
-    x[x < 0.1] = 0
+    x[x >= 1/255] = 1
+    x[x < 1/255] = 0
     return x
 
 
