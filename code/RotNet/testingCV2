@@ -1,0 +1,47 @@
+for i in range(1):
+    import sys
+    sys.path.insert(0, './code/UNET/')
+    from image import ImageDataGenerator, array_to_img, img_to_array, load_img,to_categorical
+    import matplotlib.pyplot as plt
+    import cv2
+    import numpy as np
+
+for i in range(1):
+    test = img_to_array(load_img('./code/UNET/data/predicted/mask/200.tif', color_mode = 'grayscale'),dtype = np.uint8)
+    test2 = to_categorical(test,4)
+    obj1 = test2[...,1][:,:,np.newaxis].astype('uint8')
+    obj2 = test2[...,2][:,:,np.newaxis].astype('uint8')
+    contours1 = cv2.findContours(obj1, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+    contours2 = cv2.findContours(obj2, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+
+    plt.figure(figsize=(16,64))
+    plt.imshow(obj1.squeeze())
+    for j in range(len(contours1[0])):
+        print(cv2.contourArea(contours1[0][j]))
+        if cv2.contourArea(contours1[0][j]) > 66:
+        # c = max(contours[0], key = cv2.contourArea)
+            x,y,w,h = cv2.boundingRect((contours1[0][j]))
+            if x > 0:
+                x = x-1
+            if y > 0:
+                y = y-1
+            w = w+1
+            h = h+1
+            plt.figure()
+            plt.imshow(obj1[y:(y+h+1),x:(x+w+1)].squeeze())
+
+    plt.figure(figsize=(16,64))
+    plt.imshow(obj2.squeeze())
+    for j in range(len(contours2[0])):
+        print(cv2.contourArea(contours2[0][j]))
+        if cv2.contourArea(contours2[0][j]) > 66:
+        # c = max(contours[0], key = cv2.contourArea)
+            x,y,w,h = cv2.boundingRect((contours2[0][j]))
+            if x > 0:
+                x = x-1
+            if y > 0:
+                y = y-1
+            w = w+1
+            h = h+1
+            plt.figure()
+            plt.imshow(obj2[y:(y+h+1),x:(x+w+1)].squeeze())
