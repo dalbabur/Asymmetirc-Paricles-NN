@@ -9,39 +9,14 @@ for i in range(1):
     import numpy as np
     import matplotlib.pyplot as plt
     from utils import angle_error_regression, RotNetDataGenerator, binarize_images, rotate
+    from RotNet_model import *
 
 # we don't need the labels indicating the digit value, so we only load the images
 path = 'C:/Users/Diego/Documents/MATLAB/JHU/HUR/asymmetricParticles/AsymParticles/code/RotNet/data/stock'
 imgs = [os.path.join(path,os.path.relpath(x)) for x in os.listdir(path)]
 model_name = 'rotnet_mnist_regression'
 
-# number of convolutional filters to use
-nb_filters = 64
-# size of pooling area for max pooling
-pool_size = (2, 2)
-# convolution kernel size
-kernel_size = (3, 3)
-
-nb_train_samples, img_rows, img_cols = (len(imgs),32,32)
-img_channels = 1
-input_shape = (img_rows, img_cols, img_channels)
-
-# model definition
-input = Input(shape=(img_rows, img_cols, img_channels))
-x = Conv2D(nb_filters, kernel_size, activation='relu')(input)
-x = Conv2D(nb_filters, kernel_size, activation='relu')(x)
-x = MaxPooling2D(pool_size=(2, 2))(x)
-x = Dropout(0.25)(x)
-x = Flatten()(x)
-x = Dense(128, activation='relu')(x)
-x = Dropout(0.25)(x)
-x = Dense(1, activation='sigmoid')(x)
-
-model = Model(inputs=input, outputs=x)
-
-# model compilation
-model.compile(loss=angle_error_regression,
-              optimizer='adam')
+nb_train_samples = len(imgs)
 
 # training parameters
 BATCH_SIZE = 4
@@ -59,8 +34,7 @@ rot_generator = RotNetDataGenerator(
     preprocess_func=binarize_images
 )
 # training loop
-model.load_weights('code/RotNet/RotNet.h5')
-model.fit_generator(
+rotnet(pretrained_weights = 'code/RotNet/RotNet.h5').fit_generator(
     rot_generator,
     steps_per_epoch=nb_train_samples / BATCH_SIZE,
     epochs=nb_epoch,
@@ -81,7 +55,7 @@ for i in range(1):
         if i == n_batches:
             break
 
-t = 2
+t = 3
 for i in range(1):
     plt.figure()
     plt.subplot(121)
