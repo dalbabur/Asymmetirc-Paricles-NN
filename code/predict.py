@@ -13,7 +13,8 @@ for i in range(1):
     from keras.callbacks import *
     import numpy as np
     from keract import *
-
+    from importlib import reload
+    pipeline = reload(pipeline)
 
 from_path = 'code/data/authentic/U/'
 data_size = 4137
@@ -37,13 +38,19 @@ predict_img_generator = predict_gen.flow_from_directory(
 unet = unet(pretrained_weights = 'code/UNET/UNET.h5', classes =classes)
 predictions = unet.predict_generator(predict_img_generator, steps = n_batches)
 
-final_masks = np.argmax(predictions,axis=-1)
-for i in range(int(data_size)):
-    save_img(path+to_folder+str(i)+'_scaled.tif',final_masks[i][:,:,np.newaxis],scale=True)
+# final_masks = np.argmax(predictions,axis=-1)
+# for i in range(int(data_size)):
+#     save_img(path+to_folder+str(i)+'_scaled.tif',final_masks[i][:,:,np.newaxis]*255/classes)
 
-objects = pipeline.get_objects(predictions, resize = (32,32))
-objects = objects[:,:,:,np.newaxis]
-# pipeline should also spit out x,y, and frames
+objects, info = pipeline.get_objects(predictions*255, resize = (32,32), min_size = 100)
+
+
+# info[np.argsort(info[:,3])][70]
+#
+# np.argmax(np.sort(info[:,3]) > 180)
+# plt.imshow(objects[np.argsort(info[:,3])][695,...].squeeze())
+# plt.imshow(p[2020,:,:,1].squeeze())
+
 
 rotnet = rotnet(pretrained_weights = 'code/RotNet/RotNet.h5')
 angles = rotnet.predict_on_batch(objects).squeeze()
