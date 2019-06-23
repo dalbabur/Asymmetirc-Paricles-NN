@@ -11,18 +11,12 @@ for i in range(1):
     from utils import angle_error_regression, RotNetDataGenerator, binarize_images, rotate
     from RotNet_model import *
 
-# we don't need the labels indicating the digit value, so we only load the images
 path = 'C:/Users/Diego/Documents/MATLAB/JHU/HUR/asymmetricParticles/AsymParticles/code/RotNet/data/stock'
 imgs = [os.path.join(path,os.path.relpath(x)) for x in os.listdir(path)]
-model_name = 'rotnet_mnist_regression'
-
 nb_train_samples = len(imgs)
-
-# training parameters
 BATCH_SIZE = 4
 nb_epoch = 100
 
-# callbacks
 checkpointer = ModelCheckpoint('code/RotNet/RotNet.h5', verbose=1, save_best_only=True, save_weights_only=True,monitor='loss')
 rot_generator = RotNetDataGenerator(
     imgs,
@@ -33,8 +27,9 @@ rot_generator = RotNetDataGenerator(
     color_mode = 'grayscale',
     preprocess_func=binarize_images
 )
-# training loop
-rotnet(pretrained_weights = 'code/RotNet/RotNet.h5').fit_generator(
+
+rotnet = rotnet(pretrained_weights = 'code/RotNet/RotNet2.h5')
+rotnet.fit_generator(
     rot_generator,
     steps_per_epoch=nb_train_samples / BATCH_SIZE,
     epochs=nb_epoch,
@@ -55,10 +50,12 @@ for i in range(1):
         if i == n_batches:
             break
 
-t = 3
+angles = rotnet.predict_on_batch(im)
+
+t = np.argmax(abs(360*(an-np.transpose(angles))))
 for i in range(1):
     plt.figure()
     plt.subplot(121)
     plt.imshow(im[t,...].squeeze())
     plt.subplot(122)
-    plt.imshow(rotate(im[t,...],-an[t]*360))
+    plt.imshow(rotate(im[t,...],-angles[t]*360))

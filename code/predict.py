@@ -53,6 +53,8 @@ objects, info = pipeline.get_objects(predictions*255, resize = (32,32), min_size
 
 
 rotnet = rotnet(pretrained_weights = 'code/RotNet/RotNet.h5')
+
+# might have to break this into smaller batches
 angles = rotnet.predict_on_batch(objects).squeeze()
 
 t = 100
