@@ -2,25 +2,31 @@ for i in range(1):
     import sys
     sys.path.insert(0, './code/UNET/')
     sys.path.insert(0, './code/RotNet/')
+    sys.path.insert(0, './code')
     from image import ImageDataGenerator, save_img
+    from utils import RotNetDataGenerator
     import matplotlib.pyplot as plt
     import cv2
     from UNET_model import *
+    from RotNet_model import *
+    import pipeline
     from keras.callbacks import *
     import numpy as np
     from keract import *
 
-data_size = 4540
-BATCH_SIZE = 1
+
+from_path = 'code/data/authentic/U/'
+data_size = 4137
+BATCH_SIZE = 7
 classes = 4
 resize = (64,640)
 n_batches = data_size/BATCH_SIZE
 to_folder = '/data/predicted/mask/'
-path = 'C:/Users/Diego/Documents/MATLAB/JHU/HUR/asymmetricParticles/AsymParticles/code/UNET'
+path = 'C:/Users/Diego/Documents/MATLAB/JHU/HUR/asymmetricParticles/AsymParticles/code'
 
 predict_gen = ImageDataGenerator(rescale = 1./255)
 predict_img_generator = predict_gen.flow_from_directory(
-                'data/predicted/img',
+                from_path,
                 target_size = resize,
                 color_mode = 'grayscale',
                 batch_size = BATCH_SIZE,
@@ -28,36 +34,24 @@ predict_img_generator = predict_gen.flow_from_directory(
                 shuffle = False
 )
 
-model = unet(pretrained_weights = 'model2.h5', classes =classes)
-predictions = model.predict_generator(predict_img_generator, steps = n_batches)
-
-
-# INPUT IS NOW 64x640, not 64x64, no need to put images together again.
-
-
-
-# input = np.zeros((data_size,)+resize+(1,))
-# for j in range(1):
-#     i = 0
-#     for p in predict_img_generator:
-#         input[i*BATCH_SIZE:((BATCH_SIZE)+i*BATCH_SIZE),...] = p
-#         i += 1
-#         if i == n_batches:
-#             break
+unet = unet(pretrained_weights = 'code/UNET/UNET.h5', classes =classes)
+predictions = unet.predict_generator(predict_img_generator, steps = n_batches)
 
 final_masks = np.argmax(predictions,axis=-1)
-full_masks = np.zeros((int(data_size/10),resize[0],resize[1]*10))
-# full_input = np.zeros(full_masks.shape)
+for i in range(int(data_size)):
+    save_img(path+to_folder+str(i)+'_scaled.tif',final_masks[i][:,:,np.newaxis],scale=True)
 
-for i in range(int(data_size/10)):
-    for j in range(10):
-        full_masks[i,:,resize[1]*j:(resize[1]*(j+1))] = final_masks[i*10+j]
-        # full_input[i,:,resize[1]*j:(resize[1]*(j+1))] = input[i*10+j].squeeze()
+objects = pipeline.get_objects(predictions, resize = (32,32))
+objects = objects[:,:,:,np.newaxis]
+# pipeline should also spit out x,y, and frames
 
-for i in range(int(data_size/10)):
-    save_img(path+to_folder+str(i)+'.tif',full_masks[i][:,:,np.newaxis],scale=False)
-    save_img(path+to_folder+str(i)+'_scaled.tif',full_masks[i][:,:,np.newaxis],scale=True)
-    # plt.figure(figsize=(16, 32))
-    # plt.imshow(full_input[i])
-    # plt.figure(figsize=(16, 32))
-    # plt.imshow(full_masks[i])
+rotnet = rotnet(pretrained_weights = 'code/RotNet/RotNet.h5')
+angles = rotnet.predict_on_batch(objects).squeeze()
+
+t = 100
+for i in range(1):
+    plt.figure()
+    plt.subplot(121)
+    plt.imshow(objects[t,...].squeeze())
+    plt.subplot(122)
+    plt.imshow(rotate(objects[t,...],-angles[t]*360))
