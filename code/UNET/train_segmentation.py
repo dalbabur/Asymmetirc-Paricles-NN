@@ -4,7 +4,7 @@ for i in range(1):
     from image import ImageDataGenerator, array_to_img, img_to_array, load_img
     import matplotlib.pyplot as plt
     import cv2
-    from model import *
+    from UNET_model import *
     from keras.callbacks import *
     import numpy as np
     from keract import *
@@ -47,28 +47,28 @@ for i in range(1):
 
     seed = 2019
     train_img_generator = img_train.flow_from_directory(
-                    'data/full/img',
+                    'code/UNET/data/train/img',
                     target_size = resize,
                     color_mode = 'grayscale',
                     batch_size = BATCH_SIZE,
-                    #save_to_dir = 'data/preview/img',
+                    #save_to_dir = 'code/UNET/data/preview/img',
                     class_mode = None,
                     seed = seed
     )
 
     train_mask_generator = mask_train.flow_from_directory(
-                    'data/full/mask',
+                    'code/UNET/data/train/mask',
                     target_size = resize,
                     color_mode = 'grayscale',
                     batch_size = BATCH_SIZE,
-                    #save_to_dir = 'data/preview/mask',
+                    #save_to_dir = 'code/UNET/data/preview/mask',
                     class_mode = 'HOT',
                     total_classes = classes,
                     seed = seed
     )
 
     test_img_generator = img_test.flow_from_directory(
-                    'data/test/img',
+                    'code/UNET/data/test/img',
                     target_size = resize,
                     color_mode = 'grayscale',
                     batch_size = BATCH_SIZE,
@@ -77,7 +77,7 @@ for i in range(1):
     )
 
     test_mask_generator = mask_test.flow_from_directory(
-                    'data/test/mask',
+                    'code/UNET/data/test/mask',
                     target_size = resize,
                     color_mode = 'grayscale',
                     batch_size = BATCH_SIZE,
@@ -90,7 +90,7 @@ for i in range(1):
     test_generator = zip(test_img_generator, test_mask_generator)
     callbacks = [                                                 # TODO: MONITOR VAL_LOSS IF POSSIBLE
         #EarlyStopping(patience=5, verbose=1, monitor = 'loss'),    # there seems to be some problem with ES and RLROP, possibly caused by PATIENCE
-        ModelCheckpoint('testFULL.h5', verbose=1, save_best_only=True, save_weights_only=True, monitor = 'loss'),
+        ModelCheckpoint('code/UNET/UNET.h5', verbose=1, save_best_only=True, save_weights_only=True, monitor = 'loss'),
         ReduceLROnPlateau(monitor='loss', factor=0.2,patience=3,mdoe='min',verbose=1,cooldown=1)
     ]
 
@@ -119,7 +119,7 @@ for i in range(1):
     plt.legend()
     plt.show()
 
-model = unet(pretrained_weights = 'testFULL.h5', classes =classes)
+model = unet(pretrained_weights = 'code/UNET/UNET.h5', classes =classes)
 model.evaluate_generator(test_generator, steps=test_size/BATCH_SIZE)
 
 for i in range(1):
@@ -128,7 +128,7 @@ for i in range(1):
     i = 0
     imgs = np.zeros((n_batches*BATCH_SIZE,)+resize+(1,))
     masks = np.zeros((n_batches*BATCH_SIZE,)+resize+(4,))
-    for d, l in train_generator:
+    for d, l in test_generator:
         imgs[i*BATCH_SIZE:((BATCH_SIZE)+i*BATCH_SIZE),...] = d
         masks[i*BATCH_SIZE:((BATCH_SIZE)+i*BATCH_SIZE),...] = l
         i += 1
@@ -137,29 +137,14 @@ for i in range(1):
 
     prediction = np.zeros(masks.shape)
     for k in range(n_batches*BATCH_SIZE):
-        prediction[k] = list(get_activations(model,imgs[k][np.newaxis],'conv2d_46').values())[0]
+        prediction[k] = list(get_activations(model,imgs[k][np.newaxis],'conv2d_69').values())[0]
 
-    for i in range(n_batches*BATCH_SIZE):
-        fig = plt.figure(figsize=(16, 64))
-        gs = fig.add_gridspec(2,6)
-
-        ax = fig.add_subplot(gs[0:2, 0:2])
-        ax.imshow(imgs[i].squeeze())
-
-        ax = fig.add_subplot(gs[0,2])
-        ax.imshow(prediction[i,:,:,0])
-        ax = fig.add_subplot(gs[0,3])
-        ax.imshow(prediction[i,:,:,1])
-        ax = fig.add_subplot(gs[1,2])
-        ax.imshow(prediction[i,:,:,2])
-        ax = fig.add_subplot(gs[1,3])
-        ax.imshow(prediction[i,:,:,3])
-
-        ax = fig.add_subplot(gs[0,4])
-        ax.imshow(masks[i,:,:,0])
-        ax = fig.add_subplot(gs[0,5])
-        ax.imshow(masks[i,:,:,1])
-        ax = fig.add_subplot(gs[1,4])
-        ax.imshow(masks[i,:,:,2])
-        ax = fig.add_subplot(gs[1,5])
-        ax.imshow(masks[i,:,:,3])
+    final = np.argmax(prediction,axis=-1)
+    masks = np.argmax(masks,axis=-1)
+    for t in range(n_batches*BATCH_SIZE):
+        plt.figure(figsize=(16, 64))
+        plt.imshow(imgs[t,...].squeeze())
+        plt.figure(figsize=(16, 64))
+        plt.imshow(masks[t,...])
+        plt.figure(figsize=(16, 64))
+        plt.imshow(final[t,...])

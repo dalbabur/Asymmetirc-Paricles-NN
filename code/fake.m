@@ -1,7 +1,7 @@
 tic
-generate = 2560;
+generate = 512;
 max_objs = 7;
-folder = '\data\train';
+folder = '\data\test';
 
 path = 'C:\Users\Diego\Documents\MATLAB\JHU\HUR\asymmetricParticles\AsymParticles\code\UNET';
 bgpath = [path,'\data\synthetic\background\'];
@@ -96,3 +96,4 @@ imwrite(b2,[path,folder,'\img\frames\',num2str(g),'.tif'])
 imwrite(uint8(bin),[path,folder,'\mask\frames\',num2str(g),'.tif'])
 end
 toc
+path
