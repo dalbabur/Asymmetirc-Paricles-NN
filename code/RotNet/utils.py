@@ -41,9 +41,7 @@ def binarize_images(x):
     Convert images to range 0-1 and binarize them by making
     0 the values below 0.1 and 1 the values above 0.1.
     """
-    x /= 255
-    x[x >= 1/255] = 1
-    x[x < 1/255] = 0
+    x[x != 0] = 1
     return x
 
 
