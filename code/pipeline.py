@@ -6,7 +6,7 @@ for i in range(1):
     import cv2
     import numpy as np
 
-def get_objects(y_pred, resize = None, min_size):
+def get_objects(y_pred, resize = None, min_size = 66):
     """
     takes output of UNET ( np.array of (batch_size,img_dim,img_dim,classes) ) and produces
     input for RotNet (np.array of (num_objs,resize,resize,1) ), which are all bounding squares

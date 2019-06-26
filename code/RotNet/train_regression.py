@@ -53,6 +53,7 @@ for i in range(1):
 angles = rotnet.predict_on_batch(im)
 
 t = np.argmax(abs(360*(an-np.transpose(angles))))
+t = 3
 for i in range(1):
     plt.figure()
     plt.subplot(121)
