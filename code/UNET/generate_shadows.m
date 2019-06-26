@@ -1,10 +1,10 @@
 %Folder for storing complements that are created
-ShadowFolder = '/synthetic/Shadow/';
+ShadowFolder = 'data/synthetic/Shadow/';
 
-%Opens folders for letters and finds/counts objects within 
-path = '/Users/zacharytini/Downloads';
-Lpath = [path,'/synthetic/L/object/'];
-Upath = [path,'/synthetic/U/object/'];
+%Opens folders for letters and finds/counts objects within
+path = 'C:/Users/Diego/Documents/MATLAB/JHU/HUR/asymmetricParticles/AsymParticles/code/UNET';
+Lpath = [path,'data/synthetic/L/object/'];
+Upath = [path,'data/synthetic/U/object/'];
 
 %Lists elements in each folder and stores them in vars
 L = dir(fullfile(Lpath,'*.png'));

@@ -58,7 +58,7 @@ rotnet_model = rotnet(pretrained_weights = 'code/RotNet/RotNet2.h5')
 angles = rotnet_model.predict_on_batch(objects/255).squeeze()
 
 t = 2
-for i in range(7):
+for i in range(8):
     t=i
     plt.figure()
     plt.subplot(121)
