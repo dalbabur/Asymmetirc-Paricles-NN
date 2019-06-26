@@ -1,13 +1,14 @@
 tic
 generate = 20;
 max_objs = 7;
+folder = '\data\train';
 
-path = '/Users/zacharytini/Downloads/synthetic';
-bgpath = [path,'/background/'];
-Upath = [path,'/U/object/'];
-Lpath = [path,'/L/object/'];
-UFOpath = [path,'/UFOs/object/'];
-Shadowpath = [path,'/Shadow/'];
+path = 'C:\Users\Diego\Documents\MATLAB\JHU\HUR\asymmetricParticles\AsymParticles\code\UNET';
+bgpath = [path,'\data\synthetic\background\'];
+Upath = [path,'\data\synthetic\U\object\'];
+Lpath = [path,'\data\synthetic\L\object\'];
+UFOpath = [path,'\data\synthetic\UFOs\object\'];
+Shadowpath = [path,'\data\synthetic\Shadow\'];
 
 bg = dir([bgpath '*.tif']);
 U = dir([Upath '*.png']);
@@ -17,7 +18,7 @@ Shadow = dir([Shadowpath '*.png']);
 dirs = {U,L,UFO,Shadow};
 
 % load all images
-for i = 1:numel(bg), bgs{i} = imread([bg(i).folder,'/',bg(i).name]); 
+for i = 1:numel(bg), bgs{i} = imread([bg(i).folder,'/',bg(i).name]);
 end
 for i = 1:length(dirs)
     for j=1:numel(dirs{i})
@@ -73,17 +74,17 @@ for g = 1:generate
 
         img = (img(1:m,1:n));
         idx = mask(1:m,1:n) > 100;
-  
-%Modification of shadows to better match background
-    if indx(i) == length(dirs)
-              val = t(double(img).*double(idx) <= 100 & double(img).*double(idx) > 0);
-              value = t(double(img).*double(idx) >= 100 & double(img).*double(idx) < 200);
-              t(double(img).*double(idx) <= 100 & double(img).*double(idx) > 0) = val-15;  
-              t(double(img).*double(idx) >= 100 & double(img).*double(idx)<200) = value+20;
-%All other objects remain unchanged
-    else
-        t(idx) = img(idx);
-    end
+
+        % Modification of shadows to better match background
+        if indx(i) == length(dirs)
+                  val = t(double(img).*double(idx) <= 100 & double(img).*double(idx) > 0);
+                  value = t(double(img).*double(idx) >= 100 & double(img).*double(idx) < 200);
+                  t(double(img).*double(idx) <= 100 & double(img).*double(idx) > 0) = val-15;
+                  t(double(img).*double(idx) >= 100 & double(img).*double(idx)<200) = value+20;
+        % All other objects remain unchanged
+        else
+            t(idx) = img(idx);
+        end
 
         h = fspecial('motion',randi(4),-randi(360));
         t2 = imfilter(t,h,'replicate');
@@ -102,7 +103,7 @@ for g = 1:generate
 % figure
 % imagesc(bin)
 
-imwrite(b2,[path,'/img/frames/',num2str(g),'.tif'])
-imwrite(uint8(bin),[path,'/mask/frames/',num2str(g),'.tif'])
+imwrite(b2,[path, folder,'/img/frames/Shadow',num2str(g),'.tif'])
+imwrite(uint8(bin),[path, folder,'/mask/frames/Shadow',num2str(g),'.tif'])
 end
 toc
