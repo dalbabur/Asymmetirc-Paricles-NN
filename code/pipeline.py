@@ -6,7 +6,7 @@ for i in range(1):
     import cv2
     import numpy as np
 
-def get_objects(y_pred, resize = None, min_size = 66):
+def get_objects(y_pred, resize = None, min_size = 66,max_size=300):
     """
     takes output of UNET ( np.array of (batch_size,img_dim,img_dim,classes) ) and produces
     input for RotNet (np.array of (num_objs,resize,resize,1) ), which are all bounding squares
@@ -20,7 +20,7 @@ def get_objects(y_pred, resize = None, min_size = 66):
             contours = cv2.findContours(bin, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
             for k in range(len(contours[0])):
                 A = cv2.contourArea(contours[0][k])
-                if A > min_size:
+                if A > min_size and A < max_size:
                     x,y,w,h = cv2.boundingRect((contours[0][k]))
                     if x > 0:
                         x = x-1

@@ -1,5 +1,5 @@
 tic
-generate = 20;
+generate = 2560;
 max_objs = 7;
 folder = '\data\train';
 
@@ -93,17 +93,18 @@ for g = 1:generate
         b2(x(i):xend,y(i):yend) = imfilter(b2(x(i):xend,y(i):yend), ones(3)/9,'replicate');
         b2(x(i):xend,y(i):yend) = imsharpen(b2(x(i):xend,y(i):yend),'Amount',2,'Radius',0.5);
 
-%         idx = double(idx);
-%         idx(idx==1) = indx(i);
         idx2 = bin(x(i):xend,y(i):yend);
         idx2(idx) = indx(i);
+        if indx(i) == length(dirs)
+            idx2(idx) = 0;
+        end
         bin(x(i):xend,y(i):yend) = idx2;
         end
     end
 % figure
 % imagesc(bin)
 
-imwrite(b2,[path, folder,'/img/frames/Shadow',num2str(g),'.tif'])
-imwrite(uint8(bin),[path, folder,'/mask/frames/Shadow',num2str(g),'.tif'])
+imwrite(b2,[path, folder,'/img/frames/Shadow/',num2str(g),'.tif'])
+imwrite(uint8(bin),[path, folder,'/mask/frames/Shadow/',num2str(g),'.tif'])
 end
 toc

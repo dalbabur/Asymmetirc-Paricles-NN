@@ -12,7 +12,7 @@ for i in range(1):
 data_size = 2560
 test_size = 512
 classes = 4
-BATCH_SIZE = 8
+BATCH_SIZE = 4
 resize = (64,640)
 
 for i in range(1):
@@ -47,7 +47,7 @@ for i in range(1):
 
     seed = 2019
     train_img_generator = img_train.flow_from_directory(
-                    'code/UNET/data/train/img',
+                    'code/UNET/data/train/img/frames',
                     target_size = resize,
                     color_mode = 'grayscale',
                     batch_size = BATCH_SIZE,
@@ -57,7 +57,7 @@ for i in range(1):
     )
 
     train_mask_generator = mask_train.flow_from_directory(
-                    'code/UNET/data/train/mask',
+                    'code/UNET/data/train/mask/frames',
                     target_size = resize,
                     color_mode = 'grayscale',
                     batch_size = BATCH_SIZE,
@@ -68,7 +68,7 @@ for i in range(1):
     )
 
     test_img_generator = img_test.flow_from_directory(
-                    'code/UNET/data/test/img',
+                    'code/UNET/data/test/img/frames',
                     target_size = resize,
                     color_mode = 'grayscale',
                     batch_size = BATCH_SIZE,
@@ -77,7 +77,7 @@ for i in range(1):
     )
 
     test_mask_generator = mask_test.flow_from_directory(
-                    'code/UNET/data/test/mask',
+                    'code/UNET/data/test/mask/frames',
                     target_size = resize,
                     color_mode = 'grayscale',
                     batch_size = BATCH_SIZE,
@@ -90,16 +90,16 @@ for i in range(1):
     test_generator = zip(test_img_generator, test_mask_generator)
     callbacks = [                                                 # TODO: MONITOR VAL_LOSS IF POSSIBLE
         #EarlyStopping(patience=5, verbose=1, monitor = 'loss'),    # there seems to be some problem with ES and RLROP, possibly caused by PATIENCE
-        ModelCheckpoint('code/UNET/UNET.h5', verbose=1, save_best_only=True, save_weights_only=True, monitor = 'loss'),
+        ModelCheckpoint('code/UNET/UNET_highW.h5', verbose=1, save_best_only=True, save_weights_only=True, monitor = 'loss'),
         ReduceLROnPlateau(monitor='loss', factor=0.2,patience=3,mdoe='min',verbose=1,cooldown=1)
     ]
 
 h = unet(classes = classes).fit_generator(                          # TODO: FIGURE OUT IF USING VALIDATOIN IS POSSIBLE (rn bathces become all crazy)
                 train_generator,
-                epochs = 10,                                        # remmeber you can continue training if you just load weights
+                epochs = 30,                                        # remmeber you can continue training if you just load weights
                 steps_per_epoch = data_size/BATCH_SIZE,
-                #validation_data= test_generator,
-                #validation_steps=12,
+                validation_data = test_generator,
+                validation_steps = test_size/BATCH_SIZE,
                 callbacks = callbacks                               # TODO: FIGURE OUT IF CLASS_WEIGHT WORKS
 )
 
@@ -108,6 +108,7 @@ for i in range(1):
     ax1 = fig.subplots()
     ax1.set_title("Learning curve");
     ax1.plot(h.history["loss"],'b',label="loss");
+    ax1.plot(h.history["val_loss"],'b',label="val_loss");
     ax2 = ax1.twinx()
     ax2.plot([0],[1],'b',label="loss");
     ax2.plot(h.history["categorical_accuracy"],'r', label="cat_accuracy");
@@ -115,11 +116,11 @@ for i in range(1):
         ax2.plot([lr,lr],[0.9,1],'--',label='lr dropped')
     ax1.plot(np.argmin(h.history["loss"]), np.min(h.history["loss"]), marker="x", color="r", label="best model");
     ax1.set_xlabel("Epochs");
-    ax1.set_ylabel("log_loss");
+    ax1.set_ylabel("loss");
     plt.legend()
     plt.show()
 
-model = unet(pretrained_weights = 'code/UNET/UNET.h5', classes =classes)
+model = unet(pretrained_weights = 'code/UNET/UNET_highW.h5', classes =classes)
 model.evaluate_generator(test_generator, steps=test_size/BATCH_SIZE)
 
 for i in range(1):
@@ -127,7 +128,7 @@ for i in range(1):
 
     i = 0
     imgs = np.zeros((n_batches*BATCH_SIZE,)+resize+(1,))
-    masks = np.zeros((n_batches*BATCH_SIZE,)+resize+(4,))
+    masks = np.zeros((n_batches*BATCH_SIZE,)+resize+(classes,))
     for d, l in test_generator:
         imgs[i*BATCH_SIZE:((BATCH_SIZE)+i*BATCH_SIZE),...] = d
         masks[i*BATCH_SIZE:((BATCH_SIZE)+i*BATCH_SIZE),...] = l
@@ -137,7 +138,7 @@ for i in range(1):
 
     prediction = np.zeros(masks.shape)
     for k in range(n_batches*BATCH_SIZE):
-        prediction[k] = list(get_activations(model,imgs[k][np.newaxis],'conv2d_69').values())[0]
+        prediction[k] = list(get_activations(model,imgs[k][np.newaxis],'conv2d_23').values())[0]
 
     final = np.argmax(prediction,axis=-1)
     masks = np.argmax(masks,axis=-1)
@@ -148,3 +149,10 @@ for i in range(1):
         plt.imshow(masks[t,...])
         plt.figure(figsize=(16, 64))
         plt.imshow(final[t,...])
+
+        com = list()
+        cnt,dumy= cv2.findContours(final[t,...].astype('uint8'),1,2)
+        for i in range(len(cnt)):
+            com.append(np.mean(cv2.findNonZero(cv2.drawContours(np.zeros_like(final[t,...]).astype('uint8'), cnt, i, 255, -1)).squeeze(),axis=0))
+            # plt.imshow(cv2.drawContours(final[t,...].astype('uint8'), cnt, i, 255, -1))
+            plt.plot(com[i][0],com[i][1],marker="x", color="r")

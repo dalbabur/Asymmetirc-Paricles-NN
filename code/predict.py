@@ -19,13 +19,13 @@ for i in range(1):
 
 movie = '/L/1466ul_min_2/'
 from_path = 'code/data/authentic'+movie
-save_masks = True
+save_masks = False
 data_size = 454
-BATCH_SIZE = 4
+BATCH_SIZE = 2
 classes = 4
 resize = (64,640)
 n_batches = data_size/BATCH_SIZE
-to_folder = '/data/predicted/mask/'+movie
+to_folder = '/data/predicted/mask/'+movie+'classification'
 path = 'C:/Users/Diego/Documents/MATLAB/JHU/HUR/asymmetricParticles/AsymParticles/code'
 
 predict_gen = ImageDataGenerator(rescale = 1./255)
@@ -38,7 +38,7 @@ predict_img_generator = predict_gen.flow_from_directory(
                 shuffle = False
 )
 
-unet_model = unet(pretrained_weights = 'code/UNET/UNET.h5', classes =classes)
+unet_model = unet(pretrained_weights = 'code/UNET/UNET.h5', classes = classes)
 predictions = unet_model.predict_generator(predict_img_generator, steps = n_batches)
 
 if save_masks:
@@ -49,8 +49,9 @@ if save_masks:
  for i in range(int(data_size)):
     save_img(path+to_folder+file_names[i],final_masks[i][:,:,np.newaxis]*255/classes)
 
-objects, info = pipeline.get_objects(predictions*255, resize = (32,32), min_size = 100)
-
+objects, info = pipeline.get_objects(predictions*255, resize = (32,32), min_size = 100, max_size = 150)
+objects.shape
+plt.hist(info[:,3])
 
 # info[np.argsort(info[:,3])][70]
 #
@@ -58,27 +59,26 @@ objects, info = pipeline.get_objects(predictions*255, resize = (32,32), min_size
 # plt.imshow(objects[np.argsort(info[:,3])][695,...].squeeze())
 # plt.imshow(p[2020,:,:,1].squeeze())
 
-
-rotnet_model = rotnet(pretrained_weights = 'code/RotNet/RotNet2.h5')
+rotnet_model = rotnet(pretrained_weights = 'code/RotNet/RotNet.h5', classes = 360)
 
 # might have to break this into smaller batches
-angles = rotnet_model.predict_on_batch(objects/255).squeeze()
-
+angles = rotnet_model.predict_on_batch(objects[:1000,...]/255).squeeze()
+angles = np.argmax(angles,axis=-1)
 t = 2
-for i in range(7):
+for i in range(10,20):
     t=i
     plt.figure()
     plt.subplot(121)
     plt.imshow(objects[t,...].squeeze(),cmap='gray')
     plt.subplot(122)
-    plt.imshow(rotate(objects[t,...],-angles[t]*360),cmap='gray')
+    plt.imshow(rotate(objects[t,...],-angles[t]),cmap='gray')
 
 
 for i in range(1):
     from image import array_to_img, img_to_array, load_img
 
 
-    mask = load_img('code/data/predicted/mask/3626_scaled.tif', color_mode = 'grayscale',target_size=(64,640))
+    mask = load_img('code/data/predicted/mask/U/1466ul_min_1/classification/classification8871.tif', color_mode = 'grayscale',target_size=(64,640))
     mask = img_to_array(mask,dtype='uint8').squeeze()
     mask = mask
 
@@ -89,6 +89,7 @@ for i in range(1):
     plt.figure(figsize=(16,64))
     for k in range(len(contours[0])):
         A = cv2.contourArea(contours[0][k])
+        print(A)
         if A > min_size:
             x,y,w,h = cv2.boundingRect((contours[0][k]))
             if x > 0:
@@ -104,3 +105,12 @@ for i in range(1):
             objects.append(obj)
     if resize is not None:
         objects = np.array(objects)[:,:,:,np.newaxis]
+
+angles = rotnet_model.predict_on_batch(objects/255).squeeze()
+angles = np.argmax(angles, axis= -1)
+for i in range(8):
+    plt.figure()
+    plt.subplot(121)
+    plt.imshow(objects[i,...].squeeze())
+    plt.subplot(122)
+    plt.imshow(rotate(objects[i,...],-angles[i]))

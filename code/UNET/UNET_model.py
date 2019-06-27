@@ -23,14 +23,14 @@ def tversky(y_true, y_pred):
 def tversky_loss(y_true, y_pred):
     alpha = 0.5
     beta  = 0.5
-    weights = [1,13,13,13]
+    weights = [1,26,26,13]
     ones = K.ones(K.shape(y_true))
     p0 = y_pred      # proba that voxels are class i
     p1 = ones-y_pred # proba that voxels are not class i
     g0 = y_true
     g1 = ones-y_true
 
-    w = np.zeros((8,64,640,4))   # figure out how to do this in tensors (not hard coded)
+    w = np.zeros((4,64,640,4))   # TODO: figure out how to do this in tensors (not hard coded)
 
     for i in range(len(weights)):
         w[:,:,:,i] = weights[i]
