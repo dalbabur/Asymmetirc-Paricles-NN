@@ -150,9 +150,8 @@ for i in range(1):
         plt.figure(figsize=(16, 64))
         plt.imshow(final[t,...])
 
-        com = list()
-        cnt,dumy= cv2.findContours(final[t,...].astype('uint8'),1,2)
-        for i in range(len(cnt)):
-            com.append(np.mean(cv2.findNonZero(cv2.drawContours(np.zeros_like(final[t,...]).astype('uint8'), cnt, i, 255, -1)).squeeze(),axis=0))
-            # plt.imshow(cv2.drawContours(final[t,...].astype('uint8'), cnt, i, 255, -1))
-            plt.plot(com[i][0],com[i][1],marker="x", color="r")
+        # com = list()
+        # cnt,dumy= cv2.findContours(final[t,...].astype('uint8'),1,2)
+        # for i in range(len(cnt)):
+        #     com.append(np.mean(cv2.findNonZero(cv2.drawContours(np.zeros_like(final[t,...]).astype('uint8'), cnt, i, 255, -1)).squeeze(),axis=0))
+        #     plt.plot(com[i][0],com[i][1],marker="x", color="r")

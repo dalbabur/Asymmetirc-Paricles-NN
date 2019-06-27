@@ -21,6 +21,7 @@ def get_objects(y_pred, resize = None, min_size = 66,max_size=300):
             for k in range(len(contours[0])):
                 A = cv2.contourArea(contours[0][k])
                 if A > min_size and A < max_size:
+                    com = np.mean(cv2.findNonZero(cv2.drawContours(np.zeros_like(bin).astype('uint8'), contours[0], k, 255, -1)).squeeze(),axis=0))
                     x,y,w,h = cv2.boundingRect((contours[0][k]))
                     if x > 0:
                         x = x-1
@@ -32,7 +33,7 @@ def get_objects(y_pred, resize = None, min_size = 66,max_size=300):
                     if resize is not None:
                         obj = cv2.resize(obj,resize)
                     objects.append(obj)
-                    info.append([i,j,k,A,x,y,w,h])
+                    info.append([i,j,k,A,x,y,w,h,com])
     if resize is not None:
         objects = np.array(objects)[:,:,:,np.newaxis]
     return objects, np.array(info)
