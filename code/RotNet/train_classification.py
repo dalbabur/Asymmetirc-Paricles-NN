@@ -2,6 +2,7 @@ for i in range(1):
     import os
     import sys
     sys.path.insert(0, './code/RotNet/')
+    sys.path.insert(0, './code/UNET/')
     from keras.callbacks import ModelCheckpoint
     from keras.layers import Dense, Dropout, Flatten, Input
     from keras.layers import Conv2D, MaxPooling2D
@@ -10,6 +11,7 @@ for i in range(1):
     import matplotlib.pyplot as plt
     from utils import angle_error_regression, RotNetDataGenerator, binarize_images, rotate
     from RotNet_model import *
+    from image import ImageDataGenerator
 
 path = 'C:/Users/Diego/Documents/MATLAB/JHU/HUR/asymmetricParticles/AsymParticles/code/RotNet/data/stock'
 imgs = [os.path.join(path,os.path.relpath(x)) for x in os.listdir(path)]
@@ -17,9 +19,20 @@ nb_train_samples = len(imgs)
 BATCH_SIZE = 4
 nb_epoch = 100
 
-checkpointer = ModelCheckpoint('code/RotNet/RotNet.h5', verbose=1, save_best_only=True, save_weights_only=True,monitor='loss')
+img_train = ImageDataGenerator(
+
+                 width_shift_range = 0.02,
+                 height_shift_range = 0.02,
+                 brightness_range = (0.5,1.5),
+                 shear_range = 0.1,
+                 zoom_range = 0.1,
+                 fill_mode = 'nearest'
+)
+
+checkpointer = ModelCheckpoint('code/RotNet/RotNet_wAugmentation.h5', verbose=1, save_best_only=True, save_weights_only=True,monitor='loss')
 rot_generator = RotNetDataGenerator(
     imgs,
+    img_train,
     input_shape = (32,32,1),
     batch_size=BATCH_SIZE,
     one_hot=True,
@@ -28,7 +41,7 @@ rot_generator = RotNetDataGenerator(
     preprocess_func=binarize_images
 )
 
-rotnet = rotnet(pretrained_weights = 'code/RotNet/RotNet.h5',classes = 360)
+rotnet = rotnet(classes = 360)
 rotnet.fit_generator(
     rot_generator,
     steps_per_epoch=nb_train_samples / BATCH_SIZE,

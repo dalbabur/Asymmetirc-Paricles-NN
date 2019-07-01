@@ -221,7 +221,7 @@ class RotNetDataGenerator(Iterator):
     generate batches of rotated images and rotation angles on-the-fly.
     """
 
-    def __init__(self, input, input_shape=None, color_mode='rgb', batch_size=64,
+    def __init__(self, input, image_data_generator, input_shape=None, color_mode='rgb', batch_size=64,
                  one_hot=True, preprocess_func=None, rotate=True, crop_center=False,
                  crop_largest_rect=False, shuffle=False, seed=None):
 
@@ -236,6 +236,7 @@ class RotNetDataGenerator(Iterator):
         self.crop_center = crop_center
         self.crop_largest_rect = crop_largest_rect
         self.shuffle = shuffle
+        self.image_data_generator = image_data_generator
 
         if self.color_mode not in {'rgb', 'grayscale'}:
             raise ValueError('Invalid color mode:', self.color_mode,
@@ -272,6 +273,13 @@ class RotNetDataGenerator(Iterator):
                 if is_color:
                     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
+            if self.image_data_generator:
+                image = image[...,np.newaxis]
+                params = self.image_data_generator.get_random_transform(image.shape)
+                image = self.image_data_generator.apply_transform(image, params)
+                image = self.image_data_generator.standardize(image)
+                image = image.squeeze()
+                
             if self.rotate:
                 # get a random angle
                 rotation_angle = np.random.randint(360)
