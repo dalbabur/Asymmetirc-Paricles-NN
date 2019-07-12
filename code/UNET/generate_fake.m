@@ -1,8 +1,8 @@
 tic
-generate = 2560;
+generate = 512*10;
 max_objs = 7;
 folder = '\data\train';
-
+    
 path = 'C:\Users\Diego\Documents\MATLAB\JHU\HUR\asymmetricParticles\AsymParticles\code\UNET';
 bgpath = [path,'\data\synthetic\background\'];
 Upath = [path,'\data\synthetic\U\object\'];
@@ -26,20 +26,21 @@ for i = 1:length(dirs)
     end
 end
 
-dummy = ~cellfun(@isempty, imgs);
-imgs(dummy) = cellfun(@rgb2gray, imgs(dummy), 'UniformOutput',false);
-spacing = round(mean2(cellfun(@length,imgs))*1.2);
+spacing = round(mean2(cellfun(@length,imgs))*1.5);
 
-
+class_bal = zeros(generate,length(dirs));
 for g = 1:generate
     % pick background
     b = bgs{randi([1 numel(bg)])};
+    if rand(1) > 0.5, b = imnoise(b, 'poisson'); end
+    if rand(1) > 0.5, b = fliplr(b); end
 
     % pick how many of each obj, and which
     dist = rand(1,length(dirs));
     dist = dist/sum(dist);
     total = randi([1,max_objs]);
     final = round(total*dist);
+    class_bal(g,:) = final;
     id = cell(1,sum(final));
     indx = [];
     for i = 1:length(dirs)
@@ -57,9 +58,18 @@ for g = 1:generate
     bin = (zeros(size(b)));
     if ~isempty(id)
         for i = 1:sum(final)
-        img = imgs{indx(i),id(i)};
+        img = imgs{indx(i),id(i)}(:,:,1);
         mask = masks{indx(i),id(i)};
-
+        
+        if rand(1) > 0.25, img = imnoise(img, 'poisson'); end
+        if rand(1) > 0.10
+            sc = 0.85 + (0.35).*rand(1,2);
+            sh = rand(1,2)-0.5;
+            shm = randn(1,2);
+            img = imwarp(img, affine2d([sc(1) sh(1)*shm(1) 0; sh(2)*shm(2) sc(2) 0; 0 0 1]));
+            mask = imwarp(mask, affine2d([sc(1) sh(1)*shm(1) 0; sh(2)*shm(2) sc(2) 0; 0 0 1]));
+        end
+            
         img = imrotate(img,angle(i));
         mask = imrotate(mask,angle(i));
         [m,n] = size(img);
@@ -102,7 +112,7 @@ for g = 1:generate
         end
     end
 % figure
-% imagesc(bin)
+% imshow(b2)
 
 imwrite(b2,[path, folder,'/img/frames/Shadow/',num2str(g),'.tif'])
 imwrite(uint8(bin),[path, folder,'/mask/frames/Shadow/',num2str(g),'.tif'])

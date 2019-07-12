@@ -38,9 +38,35 @@ predict_img_generator = predict_gen.flow_from_directory(
                 shuffle = False
 )
 
-unet_model = unet(pretrained_weights = 'code/UNET/UNET_highW.h5', classes = classes)
+unet_model = unet(pretrained_weights = 'code/UNET/UNET_Aug.h5', classes = classes)
 predictions = unet_model.predict_generator(predict_img_generator, steps = n_batches)
 final_masks = np.argmax(predictions,axis=-1)
+new_input = to_categorical(final_masks,num_classes = classes)
+predictions.shape
+
+for i in range(1):
+
+    i = 0
+    for d in predict_gen.flow_from_directory(
+                    from_path,
+                    target_size = resize,
+                    color_mode = 'grayscale',
+                    batch_size = data_size,
+                    class_mode = None,
+                    shuffle = False
+    ):
+        i += 1
+        if i == n_batches:
+            break
+    start = 200
+    n_batches = 5
+    for t in range(start,start+n_batches*BATCH_SIZE):
+        plt.figure(figsize=(16, 64))
+        plt.imshow(d[t,...].squeeze())
+        plt.figure(figsize=(16, 64))
+        plt.imshow(final_masks[t,...])
+        plt.figure(figsize=(16, 64))
+        plt.imshow(np.argmax(new_input[t,...],axis=-1))
 
 if save_masks:
  file_names = listdir(from_path+'/frames/')
@@ -49,8 +75,8 @@ if save_masks:
  for i in range(int(data_size)):
     save_img(path+to_folder+file_names[i],final_masks[i][:,:,np.newaxis]*255/classes)
 
-new_input = to_categorical(final_masks,num_classes = classes)
-objects, info = pipeline.get_objects(new_input, resize = (32,32), min_size = 60, max_size = 150)
+
+objects, info = pipeline.get_objects(new_input, resize = (32,32), min_size = 0, max_size = 16000)
 objects.shape
 
 for ii in range(1):
@@ -58,6 +84,7 @@ for ii in range(1):
         plt.figure()
         plt.scatter(np.arange(0,len(objects)),info[:,i],marker='o',c = info[:,3])
         plt.colorbar()
+
     plt.figure()
     plt.scatter(info[:,8],info[:,9],marker='o',c = info[:,3])
     plt.colorbar()
@@ -75,8 +102,7 @@ for ii in range(1):
     plt.colorbar()
 
 
-
-plt.imshow(new_input[100,:,:,2].squeeze())
+plt.imshow(new_input[100,:,:,1].squeeze())
 
 
 rotnet_model = rotnet(pretrained_weights = 'code/RotNet/RotNet_wAugmentation.h5', classes = 360)

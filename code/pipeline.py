@@ -15,8 +15,8 @@ def get_objects(y_pred, resize = None, min_size = 66,max_size=300):
     objects = list()
     info = list()
     for i in range(batch_size):
-        for j in range(classes-2): # don't care about background, don't care about UFOs
-            bin = y_pred[i,:,:,j+1][:,:,np.newaxis].astype('uint8')
+        for j in range(classes): # don't care about background, don't care about UFOs
+            bin = y_pred[i,:,:,j][:,:,np.newaxis].astype('uint8')
             contours = cv2.findContours(bin, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
             cnts = contours[0]
             if len(cnts)>0:
