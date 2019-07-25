@@ -455,7 +455,7 @@ def _list_valid_filenames_in_directory(directory, white_list_formats, split,
         filenames.append(relative_path)
 
     return classes, filenames
-    
+
 def save_img(path,
              x,
              data_format='channels_last',
@@ -668,122 +668,122 @@ def random_crop(x, random_crop_size, sync_seed=None, **kwargs):
     offseth = 0 if rangeh == 0 else np.random.randint(rangeh)
     return x[:, offsetw:offsetw+random_crop_size[0], offseth:offseth+random_crop_size[1]]
 
-def random_transform(x,
-                     dim_ordering='th',
-                     rotation_range=0.,
-                     width_shift_range=0.,
-                     height_shift_range=0.,
-                     shear_range=0.,
-                     zoom_range=0.,
-                     channel_shift_range=0.,
-                     fill_mode='nearest',
-                     cval=0.,
-                     horizontal_flip=False,
-                     vertical_flip=False,
-                     rescale=None,
-                     sync_seed=None,
-                     **kwargs):
-    '''
-    # Arguments
-        rotation_range: degrees (0 to 180).
-        width_shift_range: fraction of total width.
-        height_shift_range: fraction of total height.
-        shear_range: shear intensity (shear angle in radians).
-        zoom_range: amount of zoom. if scalar z, zoom will be randomly picked
-            in the range [1-z, 1+z]. A sequence of two can be passed instead
-            to select this range.
-        channel_shift_range: shift range for each channels.
-        fill_mode: points outside the boundaries are filled according to the
-            given mode ('constant', 'nearest', 'reflect' or 'wrap'). Default
-            is 'nearest'.
-        cval: value used for points outside the boundaries when fill_mode is
-            'constant'. Default is 0.
-        horizontal_flip: whether to randomly flip images horizontally.
-        vertical_flip: whether to randomly flip images vertically.
-        rescale: rescaling factor. If None or 0, no rescaling is applied,
-            otherwise we multiply the data by the value provided (before applying
-            any other transformation).
-    '''
-    np.random.seed(sync_seed)
-
-    x = x.astype('float32')
-    # x is a single image, so it doesn't have image number at index 0
-    if dim_ordering == 'th':
-        img_channel_index = 0
-        img_row_index = 1
-        img_col_index = 2
-    if dim_ordering == 'tf':
-        img_channel_index = 2
-        img_row_index = 0
-        img_col_index = 1
-    # use composition of homographies to generate final transform that needs to be applied
-    if rotation_range:
-        theta = np.pi / 180 * np.random.uniform(-rotation_range, rotation_range)
-    else:
-        theta = 0
-    rotation_matrix = np.array([[np.cos(theta), -np.sin(theta), 0],
-                                [np.sin(theta), np.cos(theta), 0],
-                                [0, 0, 1]])
-    if height_shift_range:
-        tx = np.random.uniform(-height_shift_range, height_shift_range) * x.shape[img_row_index]
-    else:
-        tx = 0
-
-    if width_shift_range:
-        ty = np.random.uniform(-width_shift_range, width_shift_range) * x.shape[img_col_index]
-    else:
-        ty = 0
-
-    translation_matrix = np.array([[1, 0, tx],
-                                   [0, 1, ty],
-                                   [0, 0, 1]])
-    if shear_range:
-        shear = np.random.uniform(-shear_range, shear_range)
-    else:
-        shear = 0
-    shear_matrix = np.array([[1, -np.sin(shear), 0],
-                             [0, np.cos(shear), 0],
-                             [0, 0, 1]])
-
-    if np.isscalar(zoom_range):
-        zoom_range = [1 - zoom_range, 1 + zoom_range]
-    elif len(zoom_range) == 2:
-        zoom_range = [zoom_range[0], zoom_range[1]]
-    else:
-        raise Exception('zoom_range should be a float or '
-                        'a tuple or list of two floats. '
-                        'Received arg: ', zoom_range)
-
-    if zoom_range[0] == 1 and zoom_range[1] == 1:
-        zx, zy = 1, 1
-    else:
-        zx, zy = np.random.uniform(zoom_range[0], zoom_range[1], 2)
-    zoom_matrix = np.array([[zx, 0, 0],
-                            [0, zy, 0],
-                            [0, 0, 1]])
-
-    transform_matrix = np.dot(np.dot(np.dot(rotation_matrix, translation_matrix), shear_matrix), zoom_matrix)
-
-    h, w = x.shape[img_row_index], x.shape[img_col_index]
-    transform_matrix = transform_matrix_offset_center(transform_matrix, h, w)
-    x = apply_transform(x, transform_matrix, img_channel_index,
-                        fill_mode=fill_mode, cval=cval)
-    if channel_shift_range != 0:
-        x = random_channel_shift(x, channel_shift_range, img_channel_index)
-
-    if horizontal_flip:
-        if np.random.random() < 0.5:
-            x = flip_axis(x, img_col_index)
-
-    if vertical_flip:
-        if np.random.random() < 0.5:
-            x = flip_axis(x, img_row_index)
-
-    # TODO:
-    # barrel/fisheye
-
-    np.random.seed()
-    return x
+# def random_transform(x,
+#                      dim_ordering='th',
+#                      rotation_range=0.,
+#                      width_shift_range=0.,
+#                      height_shift_range=0.,
+#                      shear_range=0.,
+#                      zoom_range=0.,
+#                      channel_shift_range=0.,
+#                      fill_mode='nearest',
+#                      cval=0.,
+#                      horizontal_flip=False,
+#                      vertical_flip=False,
+#                      rescale=None,
+#                      sync_seed=None,
+#                      **kwargs):
+#     '''
+#     # Arguments
+#         rotation_range: degrees (0 to 180).
+#         width_shift_range: fraction of total width.
+#         height_shift_range: fraction of total height.
+#         shear_range: shear intensity (shear angle in radians).
+#         zoom_range: amount of zoom. if scalar z, zoom will be randomly picked
+#             in the range [1-z, 1+z]. A sequence of two can be passed instead
+#             to select this range.
+#         channel_shift_range: shift range for each channels.
+#         fill_mode: points outside the boundaries are filled according to the
+#             given mode ('constant', 'nearest', 'reflect' or 'wrap'). Default
+#             is 'nearest'.
+#         cval: value used for points outside the boundaries when fill_mode is
+#             'constant'. Default is 0.
+#         horizontal_flip: whether to randomly flip images horizontally.
+#         vertical_flip: whether to randomly flip images vertically.
+#         rescale: rescaling factor. If None or 0, no rescaling is applied,
+#             otherwise we multiply the data by the value provided (before applying
+#             any other transformation).
+#     '''
+#     np.random.seed(sync_seed)
+#
+#     x = x.astype('float32')
+#     # x is a single image, so it doesn't have image number at index 0
+#     if dim_ordering == 'th':
+#         img_channel_index = 0
+#         img_row_index = 1
+#         img_col_index = 2
+#     if dim_ordering == 'tf':
+#         img_channel_index = 2
+#         img_row_index = 0
+#         img_col_index = 1
+#     # use composition of homographies to generate final transform that needs to be applied
+#     if rotation_range:
+#         theta = np.pi / 180 * np.random.uniform(-rotation_range, rotation_range)
+#     else:
+#         theta = 0
+#     rotation_matrix = np.array([[np.cos(theta), -np.sin(theta), 0],
+#                                 [np.sin(theta), np.cos(theta), 0],
+#                                 [0, 0, 1]])
+#     if height_shift_range:
+#         tx = np.random.uniform(-height_shift_range, height_shift_range) * x.shape[img_row_index]
+#     else:
+#         tx = 0
+#
+#     if width_shift_range:
+#         ty = np.random.uniform(-width_shift_range, width_shift_range) * x.shape[img_col_index]
+#     else:
+#         ty = 0
+#
+#     translation_matrix = np.array([[1, 0, tx],
+#                                    [0, 1, ty],
+#                                    [0, 0, 1]])
+#     if shear_range:
+#         shear = np.random.uniform(-shear_range, shear_range)
+#     else:
+#         shear = 0
+#     shear_matrix = np.array([[1, -np.sin(shear), 0],
+#                              [0, np.cos(shear), 0],
+#                              [0, 0, 1]])
+#
+#     if np.isscalar(zoom_range):
+#         zoom_range = [1 - zoom_range, 1 + zoom_range]
+#     elif len(zoom_range) == 2:
+#         zoom_range = [zoom_range[0], zoom_range[1]]
+#     else:
+#         raise Exception('zoom_range should be a float or '
+#                         'a tuple or list of two floats. '
+#                         'Received arg: ', zoom_range)
+#
+#     if zoom_range[0] == 1 and zoom_range[1] == 1:
+#         zx, zy = 1, 1
+#     else:
+#         zx, zy = np.random.uniform(zoom_range[0], zoom_range[1], 2)
+#     zoom_matrix = np.array([[zx, 0, 0],
+#                             [0, zy, 0],
+#                             [0, 0, 1]])
+#
+#     transform_matrix = np.dot(np.dot(np.dot(rotation_matrix, translation_matrix), shear_matrix), zoom_matrix)
+#
+#     h, w = x.shape[img_row_index], x.shape[img_col_index]
+#     transform_matrix = transform_matrix_offset_center(transform_matrix, h, w)
+#     x = apply_transform(x, transform_matrix, img_channel_index,
+#                         fill_mode=fill_mode, cval=cval)
+#     if channel_shift_range != 0:
+#         x = random_channel_shift(x, channel_shift_range, img_channel_index)
+#
+#     if horizontal_flip:
+#         if np.random.random() < 0.5:
+#             x = flip_axis(x, img_col_index)
+#
+#     if vertical_flip:
+#         if np.random.random() < 0.5:
+#             x = flip_axis(x, img_row_index)
+#
+#     # TODO:
+#     # barrel/fisheye
+#
+#     np.random.seed()
+#     return x
 
 class ImageDataGenerator(object):
     """Generate batches of tensor image data with real-time data augmentation.
@@ -1668,6 +1668,7 @@ class BatchFromFilesMixin():
         # self.filepaths is dynamic, is better to call it once outside the loop
         filepaths = self.filepaths
         for i, j in enumerate(index_array):
+            # print(filepaths[j])
             img = load_img(filepaths[j],
                            color_mode=self.color_mode,
                            target_size=self.target_size,
@@ -1708,6 +1709,12 @@ class BatchFromFilesMixin():
             batch_y = self.data[index_array]
         elif self.class_mode =='HOT':
             return to_categorical(batch_x,self.total_classes)
+        elif self.class_mode == 'categorical_bin':
+            batch_x = (batch_x == 1).astype(float)
+            batch_y = np.zeros((len(batch_x), len(self.class_indices)),
+                               dtype=self.dtype)
+            for i, n_observation in enumerate(index_array):
+                batch_y[i, self.classes[n_observation]] = 1.
         else:
             return batch_x
         return batch_x, batch_y
@@ -1738,7 +1745,7 @@ class BatchFromFilesMixin():
 
 
 class DirectoryIterator(BatchFromFilesMixin, Iterator):
-    allowed_class_modes = {'categorical', 'binary', 'sparse', 'input','HOT', None}
+    allowed_class_modes = {'categorical', 'binary', 'sparse', 'input','HOT','categorical_bin', None}
     def __init__(self,
                  directory,
                  image_data_generator,

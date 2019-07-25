@@ -1,7 +1,9 @@
 tic
-generate = 20;
+generate = 5120*3;
 max_objs = 7;
-folder = '\data\test';
+folder = '\data\train';
+noise = 0;
+transform = 1;
 
 path = 'C:\Users\Diego\Documents\MATLAB\JHU\HUR\asymmetricParticles\AsymParticles\code\UNET';
 bgpath = [path,'\data\synthetic\background\'];
@@ -26,20 +28,22 @@ for i = 1:length(dirs)
     end
 end
 
-dummy = ~cellfun(@isempty, imgs);
-imgs(dummy) = cellfun(@rgb2gray, imgs(dummy), 'UniformOutput',false);
-spacing = round(mean2(cellfun(@length,imgs))*1.2);
+spacing = round(mean2(cellfun(@length,imgs))*1.5);
 
-
+class_bal = zeros(generate,length(dirs));
 for g = 1:generate
     % pick background
     b = bgs{randi([1 numel(bg)])};
+
+    if noise == 1, if rand(1) > 0.5, b = imnoise(b, 'poisson'); end, end
+    if transform == 1, if rand(1) > 0.5, b = fliplr(b); end, end
 
     % pick how many of each obj, and which
     dist = rand(1,length(dirs));
     dist = dist/sum(dist);
     total = randi([1,max_objs]);
     final = round(total*dist);
+    class_bal(g,:) = final;
     id = cell(1,sum(final));
     indx = [];
     for i = 1:length(dirs)
@@ -57,8 +61,19 @@ for g = 1:generate
     bin = (zeros(size(b)));
     if ~isempty(id)
         for i = 1:sum(final)
-        img = imgs{indx(i),id(i)};
+        img = imgs{indx(i),id(i)}(:,:,1);
         mask = masks{indx(i),id(i)};
+
+        if noise == 1, if rand(1) > 0.25, img = imnoise(img, 'poisson'); end, end
+        if transform == 1
+            if rand(1) > 0.10
+                sc = 0.85 + (0.35).*rand(1,2);
+                sh = rand(1,2)-0.5;
+                shm = randn(1,2);
+                img = imwarp(img, affine2d([sc(1) sh(1)*shm(1) 0; sh(2)*shm(2) sc(2) 0; 0 0 1]));
+                mask = imwarp(mask, affine2d([sc(1) sh(1)*shm(1) 0; sh(2)*shm(2) sc(2) 0; 0 0 1]));
+            end
+        end
 
         img = imrotate(img,angle(i));
         mask = imrotate(mask,angle(i));
@@ -75,16 +90,16 @@ for g = 1:generate
         img = (img(1:m,1:n));
         idx = mask(1:m,1:n) > 100;
 
-%Modification of shadows to better match background
-    if indx(i) == length(dirs)
-              val = t(double(img).*double(idx) <= 100 & double(img).*double(idx) > 0);
-              value = t(double(img).*double(idx) >= 100 & double(img).*double(idx) < 200);
-              t(double(img).*double(idx) <= 100 & double(img).*double(idx) > 0) = val-15;
-              t(double(img).*double(idx) >= 100 & double(img).*double(idx)<200) = value+20;
-%All other objects remain unchanged
-    else
-        t(idx) = img(idx);
-    end
+        % Modification of shadows to better match background
+        if indx(i) == length(dirs)
+                  val = t(double(img).*double(idx) <= 100 & double(img).*double(idx) > 0);
+                  value = t(double(img).*double(idx) >= 100 & double(img).*double(idx) < 200);
+                  t(double(img).*double(idx) <= 100 & double(img).*double(idx) > 0) = val-15;
+                  t(double(img).*double(idx) >= 100 & double(img).*double(idx)<200) = value+20;
+        % All other objects remain unchanged
+        else
+            t(idx) = img(idx);
+        end
 
         h = fspecial('motion',randi(4),-randi(360));
         t2 = imfilter(t,h,'replicate');
@@ -93,17 +108,37 @@ for g = 1:generate
         b2(x(i):xend,y(i):yend) = imfilter(b2(x(i):xend,y(i):yend), ones(3)/9,'replicate');
         b2(x(i):xend,y(i):yend) = imsharpen(b2(x(i):xend,y(i):yend),'Amount',2,'Radius',0.5);
 
-%         idx = double(idx);
-%         idx(idx==1) = indx(i);
         idx2 = bin(x(i):xend,y(i):yend);
         idx2(idx) = indx(i);
+        if indx(i) == length(dirs)
+            idx2(idx) = 0;
+        end
         bin(x(i):xend,y(i):yend) = idx2;
         end
     end
-% figure
-% imagesc(bin)
 
-imwrite(b2,[path, folder,'/img/frames/',num2str(g),'.tif'])
-imwrite(uint8(bin),[path, folder,'/mask/frames/',num2str(g),'.tif'])
+    [m,n] = size(b2);
+    if transform == 1
+        b2 = b2*(0.5 + rand(1));
+        if rand(1) > 0.10
+            q = 2.5*randn(1);
+            b2 = imrotate(b2, q, 'crop');
+            bin = imrotate(bin, q, 'crop');
+        end
+        if rand(1) > 0.10
+            s = 1+rand(1)/4;
+            b2 = imresize(b2,s,'OutputSize',[m,n]);
+            bin = imresize(bin,s,'OutputSize',[m,n],'method','nearest');
+        end
+    end
+
+% % figure
+% % subplot(2,1,1)
+% % imshow(b2)
+% % subplot(2,1,2)
+% % imshow(bin)
+
+imwrite(b2,[path, folder,'/img/frames/Augmented2/',num2str(g),'.tif'])
+imwrite(uint8(bin),[path, folder,'/mask/frames/Augmented2/',num2str(g),'.tif'])
 end
 toc
