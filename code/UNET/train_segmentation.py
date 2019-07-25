@@ -9,41 +9,23 @@ for i in range(1):
     import numpy as np
     from keract import *
 
-data_size = 2560*2
-test_size = 512*2
-classes = 4
-BATCH_SIZE = 8
+data_size = 5170
+test_size = 2560
+classes = 2
+BATCH_SIZE = 5
 resize = (64,640)
 
+def binmask(img):
+    return img>0
+
 for i in range(1):
-    img_train = ImageDataGenerator(                             # TODO: FIGURE OUT TRANSFORMATION ON MASK (rn it spills to other classes)
-
-                    rescale = 1./255,
-                    # rotation_range = 1,
-                    # width_shift_range = 0.02,
-                    # height_shift_range = 0.02,
-                    # brightness_range = (0.5,1.5),
-                    # shear_range = 0.1,
-                    # zoom_range = 0.1,
-                    # horizontal_flip = True,
-                    # fill_mode = 'nearest'
-    )
-
+    img_train = ImageDataGenerator(rescale = 1./255)            # TODO: FIGURE OUT TRANSFORMATION ON MASK (rn it spills to other classes)
     mask_train = ImageDataGenerator(
-
-                    # rotation_range = 1,
-                    # width_shift_range = 0.02,
-                    # height_shift_range = 0.02,
-                    # shear_range = 0.1,
-                    # zoom_range = 0.1,
-                    # horizontal_flip = True,
-                    # fill_mode = 'constant',
-                    # cval = 0
-
-    )
+    preprocessing_function = binmask)                           # doing data augmentation is the other option
 
     img_test = ImageDataGenerator(rescale = 1./255)
-    mask_test = ImageDataGenerator()
+    mask_test = ImageDataGenerator(
+    preprocessing_function = binmask)
 
     seed = 2019
     train_img_generator = img_train.flow_from_directory(
@@ -90,13 +72,13 @@ for i in range(1):
     test_generator = zip(test_img_generator, test_mask_generator)
     callbacks = [                                                 # TODO: MONITOR VAL_LOSS IF POSSIBLE
         #EarlyStopping(patience=5, verbose=1, monitor = 'loss'),    # there seems to be some problem with ES and RLROP, possibly caused by PATIENCE
-        ModelCheckpoint('code/UNET/UNET_Aug.h5', verbose=1, save_best_only=True, save_weights_only=True, monitor = 'loss'),
+        ModelCheckpoint('code/UNET/UNET_bin.h5', verbose=1, save_best_only=True, save_weights_only=True, monitor = 'loss'),
         ReduceLROnPlateau(monitor='loss', factor=0.2,patience=3,mdoe='min',verbose=1,cooldown=1)
     ]
 
 h = unet(classes = classes).fit_generator(                          # TODO: FIGURE OUT IF USING VALIDATOIN IS POSSIBLE (rn bathces become all crazy)
                 train_generator,
-                epochs = 10,                                        # remmeber you can continue training if you just load weights
+                epochs = 20,                                        # remmeber you can continue training if you just load weights
                 steps_per_epoch = data_size/BATCH_SIZE,
                 validation_data = test_generator,
                 validation_steps = test_size/BATCH_SIZE,
@@ -120,7 +102,7 @@ for i in range(1):
     plt.legend()
     plt.show()
 
-model = unet(pretrained_weights = 'code/UNET/UNET_Aug.h5', classes =classes)
+model = unet(pretrained_weights = 'code/UNET/UNET_bin.h5', classes =classes)
 model.evaluate_generator(test_generator, steps=test_size/BATCH_SIZE)
 
 for i in range(1):
@@ -136,9 +118,7 @@ for i in range(1):
         if i == n_batches:
             break
 
-    prediction = np.zeros(masks.shape)
-    for k in range(n_batches*BATCH_SIZE):
-        prediction[k] = list(get_activations(model,imgs[k][np.newaxis],'conv2d_46').values())[0]
+    prediction = model.predict(imgs)
 
     final = np.argmax(prediction,axis=-1)
     masks = np.argmax(masks,axis=-1)

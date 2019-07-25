@@ -1,3 +1,6 @@
 code/UNET/data
 code/RotNet/data
 code/data
+code/UNET/weights
+code/RotNet/weights
+code/ClassNet/weights

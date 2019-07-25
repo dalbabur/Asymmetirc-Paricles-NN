@@ -1668,6 +1668,7 @@ class BatchFromFilesMixin():
         # self.filepaths is dynamic, is better to call it once outside the loop
         filepaths = self.filepaths
         for i, j in enumerate(index_array):
+            # print(filepaths[j])
             img = load_img(filepaths[j],
                            color_mode=self.color_mode,
                            target_size=self.target_size,
@@ -1708,6 +1709,12 @@ class BatchFromFilesMixin():
             batch_y = self.data[index_array]
         elif self.class_mode =='HOT':
             return to_categorical(batch_x,self.total_classes)
+        elif self.class_mode == 'categorical_bin':
+            batch_x = (batch_x == 1).astype(float)
+            batch_y = np.zeros((len(batch_x), len(self.class_indices)),
+                               dtype=self.dtype)
+            for i, n_observation in enumerate(index_array):
+                batch_y[i, self.classes[n_observation]] = 1.
         else:
             return batch_x
         return batch_x, batch_y
@@ -1738,7 +1745,7 @@ class BatchFromFilesMixin():
 
 
 class DirectoryIterator(BatchFromFilesMixin, Iterator):
-    allowed_class_modes = {'categorical', 'binary', 'sparse', 'input','HOT', None}
+    allowed_class_modes = {'categorical', 'binary', 'sparse', 'input','HOT','categorical_bin', None}
     def __init__(self,
                  directory,
                  image_data_generator,

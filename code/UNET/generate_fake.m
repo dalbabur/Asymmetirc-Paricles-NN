@@ -1,8 +1,10 @@
 tic
-generate = 512*10;
+generate = 5120*3;
 max_objs = 7;
 folder = '\data\train';
-    
+noise = 0;
+transform = 1;
+
 path = 'C:\Users\Diego\Documents\MATLAB\JHU\HUR\asymmetricParticles\AsymParticles\code\UNET';
 bgpath = [path,'\data\synthetic\background\'];
 Upath = [path,'\data\synthetic\U\object\'];
@@ -32,8 +34,9 @@ class_bal = zeros(generate,length(dirs));
 for g = 1:generate
     % pick background
     b = bgs{randi([1 numel(bg)])};
-    if rand(1) > 0.5, b = imnoise(b, 'poisson'); end
-    if rand(1) > 0.5, b = fliplr(b); end
+
+    if noise == 1, if rand(1) > 0.5, b = imnoise(b, 'poisson'); end, end
+    if transform == 1, if rand(1) > 0.5, b = fliplr(b); end, end
 
     % pick how many of each obj, and which
     dist = rand(1,length(dirs));
@@ -60,16 +63,18 @@ for g = 1:generate
         for i = 1:sum(final)
         img = imgs{indx(i),id(i)}(:,:,1);
         mask = masks{indx(i),id(i)};
-        
-        if rand(1) > 0.25, img = imnoise(img, 'poisson'); end
-        if rand(1) > 0.10
-            sc = 0.85 + (0.35).*rand(1,2);
-            sh = rand(1,2)-0.5;
-            shm = randn(1,2);
-            img = imwarp(img, affine2d([sc(1) sh(1)*shm(1) 0; sh(2)*shm(2) sc(2) 0; 0 0 1]));
-            mask = imwarp(mask, affine2d([sc(1) sh(1)*shm(1) 0; sh(2)*shm(2) sc(2) 0; 0 0 1]));
+
+        if noise == 1, if rand(1) > 0.25, img = imnoise(img, 'poisson'); end, end
+        if transform == 1 
+            if rand(1) > 0.10
+                sc = 0.85 + (0.35).*rand(1,2);
+                sh = rand(1,2)-0.5;
+                shm = randn(1,2);
+                img = imwarp(img, affine2d([sc(1) sh(1)*shm(1) 0; sh(2)*shm(2) sc(2) 0; 0 0 1]));
+                mask = imwarp(mask, affine2d([sc(1) sh(1)*shm(1) 0; sh(2)*shm(2) sc(2) 0; 0 0 1]));
+            end
         end
-            
+
         img = imrotate(img,angle(i));
         mask = imrotate(mask,angle(i));
         [m,n] = size(img);
@@ -111,10 +116,29 @@ for g = 1:generate
         bin(x(i):xend,y(i):yend) = idx2;
         end
     end
-% figure
-% imshow(b2)
 
-imwrite(b2,[path, folder,'/img/frames/Shadow/',num2str(g),'.tif'])
-imwrite(uint8(bin),[path, folder,'/mask/frames/Shadow/',num2str(g),'.tif'])
+    [m,n] = size(b2);
+    if transform == 1
+        b2 = b2*(0.5 + rand(1));
+        if rand(1) > 0.10
+            q = 2.5*randn(1);
+            b2 = imrotate(b2, q, 'crop');
+            bin = imrotate(bin, q, 'crop'); 
+        end
+        if rand(1) > 0.10
+            s = 1+rand(1)/4;
+            b2 = imresize(b2,s,'OutputSize',[m,n]);
+            bin = imresize(bin,s,'OutputSize',[m,n],'method','nearest'); 
+        end
+    end
+
+% % figure
+% % subplot(2,1,1)
+% % imshow(b2)
+% % subplot(2,1,2)
+% % imshow(bin)
+
+imwrite(b2,[path, folder,'/img/frames/Augmented2/',num2str(g),'.tif'])
+imwrite(uint8(bin),[path, folder,'/mask/frames/Augmented2/',num2str(g),'.tif'])
 end
 toc
