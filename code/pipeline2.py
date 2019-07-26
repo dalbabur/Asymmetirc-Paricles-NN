@@ -50,3 +50,79 @@ def get_objects(y_pred, class_model, resize = None, min_size = 66,max_size=300):
     info = np.insert(info, 2, np.argmax(predictions,1),1)
     info = np.insert(info, 3, np.max(predictions,1),1)
     return objects, info
+
+def get_trajectories(info, max_memory = 10):
+
+    traj = []
+    k = np.zeros(info.shape[0])
+    memory = []
+    i = 0
+    idx = 0
+    labels = []
+
+    while i  < max(info[:,0]).astype(int):
+
+    # debugging print outs and plots
+    # for z in range(1):
+
+        # plt.figure(figsize=(16, 64))
+        # plt.imshow(final_masks[i,...])
+        # plt.plot(info[info[:,0]==i,5],info[info[:,0]==i,6],'g*')
+        # plt.title(i)
+        # print('-----------------------')
+
+        dummy = list(labels)
+        reset = idx
+        for f in range(sum(info[:,0] == i)):
+            idx = idx+f
+            # print(['idx',idx,'i',i,'f',f,'total',sum(info[:,0] == i)])
+            # plt.plot(info[idx,9],info[idx,10],'*')
+            if memory == []:
+                traj.append(info[idx,:])
+                if i == 0:
+                    labels.append(0)
+                else:
+                    labels.append(max(labels)+1)
+                # print(['empty memory, new object',labels[-1]])
+            else:
+                dists = np.zeros(len(memory))
+                for j in range(len(memory)):
+                    # print([info[idx,9],info[idx,10]],[memory[j][9],memory[j][10]])
+                    dists[j] = ( (info[idx,9] - memory[j][9])**2 + (info[idx,10] - memory[j][10])**2 + (info[idx,0] - memory[j][0])**2)**(1/2)
+
+                # print(dists)
+                # print(['argmin',np.argmin(dists)])
+                # print([dummy,dummy[-len(memory):]])
+                label = dummy[-len(memory):][np.argmin(dists)]
+                if min(dists) < 50:
+                    if k[label] == 0:
+                        traj[label] = np.append([traj[label]],[info[idx,:]],axis=0)
+                        labels.append(label)
+                        # print(['first append to old object', label])
+                    else:
+                        traj[label] = np.append(traj[label],[info[idx,:]],axis=0)
+                        # print(['append to old object',label])
+                        labels.append(label)
+                else:
+                    traj.append(info[idx,:])
+                    labels.append(max(labels)+1)
+                    # print(['too far, new object',labels[-1]])
+
+                k[label] = k[label]+1
+
+        if sum(info[:,0] == i) > 0:
+            if len(memory) == max_memory:
+                for f in range(sum(info[:,0] == i)):
+                    memory.pop(f)
+                    # print(['memory popped'])
+
+            for f in range(sum(info[:,0] == i)):
+                memory.append(info[reset+f,:])
+                # print(['added memory'])
+
+            # print(['length memory',len(memory)])
+            idx = idx+1
+
+        i = i+1
+        # print('-----------------------')
+    return traj, labels

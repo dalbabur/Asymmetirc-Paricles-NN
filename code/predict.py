@@ -40,7 +40,7 @@ predict_img_generator = predict_gen.flow_from_directory(
                 shuffle = False
 )
 
-unet_model = unet(pretrained_weights = 'code/UNET/UNET_bin.h5', classes = classes)
+unet_model = unet(pretrained_weights = 'code/UNET/weights/UNET_bin.h5', classes = classes)
 predictions = unet_model.predict_generator(predict_img_generator, steps = n_batches)
 final_masks = np.argmax(predictions,axis=-1)
 new_input = to_categorical(final_masks,num_classes = classes)
@@ -98,7 +98,7 @@ if save_masks:
  for i in range(int(data_size)):
     save_img(path+to_folder+file_names[i],final_masks[i][:,:,np.newaxis])
 
-cnn = classnet(classes = 3 ,pretrained_weights = 'code/ClassNet/ClassNet2.h5',input_size = (32,32,1))
+cnn = classnet(classes = 3 ,pretrained_weights = 'code/ClassNet/weights/ClassNet2.h5',input_size = (32,32,1))
 objects, info = pipeline2.get_objects(new_input2, cnn, resize = (32,32), min_size = 0, max_size = 1600)
 objects.shape
 info.shape
@@ -132,6 +132,20 @@ for ii in range(1):
     [plt.hist(info[info[:,2] == d,4], alpha=0.75, label=d) for d in [0,1,2]]
     plt.legend()
 
+traj, labels = pipeline2.get_trajectories(info)
+
+for i in range(len(traj)):
+    plt.plot(traj[i][:,9],traj[i][:,10])
+
+
+
+rotnet_model = rotnet(pretrained_weights = 'code/RotNet/weights/RotNet_wAugmentation.h5', classes = 360)
+
+# might have to break this into smaller batches
+angles = rotnet_model.predict_on_batch(objects).squeeze()
+angles = np.argmax(angles,axis=-1)
+
+
 for i in range(50):
     plt.figure()
     plt.subplot(1,2,1)
@@ -141,67 +155,8 @@ for i in range(50):
     plt.imshow(rotate(objects[i,...].squeeze(),-angles[i]))
     plt.title([-angles[i],info[i,9],info[i,10]])
 
-traj = []
-dists = np.ones((565,565))*9999
-k = np.zeros(565)
-memory = []
-i = 0
-idx = 0
-labels = []
-while i  < info.shape[0]:
-    idx = i
-    dummy = list(labels)
-    for f in range(sum(info[:,0] == i)):
-        idx = i+f
-        print(['idx',idx,'i',i,'f',f,'total',sum(info[:,0] == i)])
-        if memory == []:
-            traj.append(info[idx,:])
-            if i == 0:
-                labels.append(0)
-            else:
-                labels.append(max(labels)+1)
-            print(['empty memory, new object',labels[-1]])
-        else:
-            dists = np.zeros(len(memory))
-            for j in range(len(memory)):
-                dists[j] = ( (info[idx,9] - memory[j][9])**2 + (info[idx,10] - memory[j][10])**2 + (info[idx,0] - memory[j][0])**2)**(1/2)
 
-            print(dists)
-            print(['argmin',np.argmin(dists)])
-            print([dummy,dummy[-len(memory):]])
-            label = dummy[-len(memory):][np.argmin(dists)]
-            if min(dists) < 15:
-                if k[label] == 0:
-                    traj[label] = np.append([traj[label]],[info[idx,:]],axis=0)
-                    labels.append(label)
-                    print(['first append to old object', label])
-                else:
-                    traj[label] = np.append(traj[label],[info[idx,:]],axis=0)
-                    print(['append to old object',label])
-                    labels.append(label)
-                k[label] = k[label]+1
-            else:
-                traj.append(info[idx,:])
-                labels.append(max(labels)+1)
-                print(['too far, new object',labels[-1]])
 
-    memory = []
-    print(['cleared memory'])
-    for f in range(sum(info[:,0] == i)):
-        memory.append(info[i+f,:])
-        print(['added memory'])
-    print(['length memory',len(memory)])
-    i = idx+1
-    print('-----------------------')
-
-plt.plot(k)
-len(traj[3])
-info[0:20,0]
-rotnet_model = rotnet(pretrained_weights = 'code/RotNet/RotNet_wAugmentation.h5', classes = 360)
-
-# might have to break this into smaller batches
-angles = rotnet_model.predict_on_batch(objects).squeeze()
-angles = np.argmax(angles,axis=-1)
 t = 2
 
 import matplotlib.animation as animation
