@@ -132,10 +132,11 @@ for ii in range(1):
     [plt.hist(info[info[:,2] == d,4], alpha=0.75, label=d) for d in [0,1,2]]
     plt.legend()
 
-traj, labels = pipeline2.get_trajectories(info)
-
-for i in range(len(traj)):
-    plt.plot(traj[i][:,9],traj[i][:,10])
+for j in range(5,30):
+    traj, labels = pipeline2.get_trajectories(info,max_memory = j)
+    plt.figure(figsize = (16,8))
+    for i in range(len(traj)):
+        plt.plot(traj[i][:,9],traj[i][:,10])
 
 
 
