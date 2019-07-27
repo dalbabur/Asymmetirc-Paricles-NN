@@ -51,15 +51,14 @@ def get_objects(y_pred, class_model, resize = None, min_size = 66,max_size=300):
     info = np.insert(info, 3, np.max(predictions,1),1)
     return objects, info
 
-def get_trajectories(info, max_memory = 10):
+def get_trajectories(info, distance = 25, max_memory = 10):
 
     traj = []
-    k = np.zeros(info.shape[0])
     memory = []
     i = 0
     idx = 0
     labels = []
-
+    all_dists = np.array([])
     while i  < max(info[:,0]).astype(int):
 
     # debugging print outs and plots
@@ -78,7 +77,7 @@ def get_trajectories(info, max_memory = 10):
             # print(['idx',idx,'i',i,'f',f,'total',sum(info[:,0] == i)])
             # plt.plot(info[idx,9],info[idx,10],'*')
             if memory == []:
-                traj.append(info[idx,:])
+                traj.append(info[idx,:][np.newaxis])
                 if i == 0:
                     labels.append(0)
                 else:
@@ -94,26 +93,20 @@ def get_trajectories(info, max_memory = 10):
                 # print(['argmin',np.argmin(dists)])
                 # print([dummy,dummy[-len(memory):]])
                 label = dummy[-len(memory):][np.argmin(dists)]
-                if min(dists) < 50:
-                    if k[label] == 0:
-                        traj[label] = np.append([traj[label]],[info[idx,:]],axis=0)
-                        labels.append(label)
-                        # print(['first append to old object', label])
-                    else:
-                        traj[label] = np.append(traj[label],[info[idx,:]],axis=0)
-                        # print(['append to old object',label])
-                        labels.append(label)
+                all_dists = np.append(all_dists,min(dists))
+                if min(dists) < distance:
+                    traj[label] = np.append(traj[label],info[idx,:][np.newaxis],axis=0)
+                    # print(['append to old object',label])
+                    labels.append(label)
                 else:
-                    traj.append(info[idx,:])
+                    traj.append(info[idx,:][np.newaxis])
                     labels.append(max(labels)+1)
                     # print(['too far, new object',labels[-1]])
 
-                k[label] = k[label]+1
-
         if sum(info[:,0] == i) > 0:
-            if len(memory) == max_memory:
+            if len(memory) >= max_memory:
                 for f in range(sum(info[:,0] == i)):
-                    memory.pop(f)
+                    memory.pop(0)
                     # print(['memory popped'])
 
             for f in range(sum(info[:,0] == i)):
@@ -125,4 +118,4 @@ def get_trajectories(info, max_memory = 10):
 
         i = i+1
         # print('-----------------------')
-    return traj, labels
+    return traj, labels, all_dists

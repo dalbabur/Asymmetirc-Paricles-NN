@@ -17,6 +17,7 @@ for i in range(1):
     import numpy as np
     from keract import *
     from importlib import reload
+    from scipy import optimize
     pipeline2 = reload(pipeline2)
 
 movie = '/L/1466ul_min_2/'
@@ -132,12 +133,31 @@ for ii in range(1):
     [plt.hist(info[info[:,2] == d,4], alpha=0.75, label=d) for d in [0,1,2]]
     plt.legend()
 
-for j in range(5,30):
-    traj, labels = pipeline2.get_trajectories(info,max_memory = j)
-    plt.figure(figsize = (16,8))
-    for i in range(len(traj)):
-        plt.plot(traj[i][:,9],traj[i][:,10])
+# distances = [54]
+# memories = [3]
+# total = 0
+# f1 = plt.figure(figsize = (32,32))
+#
+# for j in range(len(memories)):
+#     for k in range(len(distances)):
+#         total = total+1
+#         traj, labels, dists = pipeline2.get_trajectories(info,distances[k],memories[j])
+#         a1 = f1.add_subplot(6,6,total)
+#         a1.title.set_text(len(traj))
+#         for i in range(len(traj)):
+#             particles = traj[i][:,2] != 2
+#             a1.plot(traj[i][:,9],traj[i][:,10])
 
+wave = lambda x,a,b,c,d: a*(np.sin(b*x +c)) + d
+plt.figure(figsize = (24,12))
+traj, labels, dists = pipeline2.get_trajectories(info,54,3)
+for i in range(len(traj)):
+    if len(traj[i][5:-5,9]) >= 4:
+        plt.plot(traj[i][5:-5,9],traj[i][5:-5,10],'o',label = i)
+        SSE = lambda p: np.sum((traj[i][5:-5,9]-wave(traj[i][5:-5,10],*p)**2))
+        opti = optimize.differential_evolution(SSE, [[0,100],[-100,100],[-100,100],[0, 100]],seed=1)
+        params, params_covariance = optimize.curve_fit(wave, traj[i][5:-5,9], traj[i][5:-5,10], p0 = opti.x)
+        plt.plot(traj[i][5:-5,9], wave(traj[i][5:-5,9], *params))
 
 
 rotnet_model = rotnet(pretrained_weights = 'code/RotNet/weights/RotNet_wAugmentation.h5', classes = 360)
