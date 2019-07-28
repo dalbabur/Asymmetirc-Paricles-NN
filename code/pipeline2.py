@@ -6,7 +6,7 @@ for i in range(1):
     import cv2
     import numpy as np
 
-def get_objects(y_pred, class_model, resize = None, min_size = 66,max_size=300):
+def get_objects(y_pred, class_model, rot_model, resize = None, min_size = 66,max_size=300):
     """
     takes output of UNET ( np.array of (batch_size,img_dim,img_dim,classes) ) and produces
     input for RotNet (np.array of (num_objs,resize,resize,1) ), which are all bounding squares
@@ -49,6 +49,11 @@ def get_objects(y_pred, class_model, resize = None, min_size = 66,max_size=300):
     predictions = class_model.predict(objects.astype(int), 10)
     info = np.insert(info, 2, np.argmax(predictions,1),1)
     info = np.insert(info, 3, np.max(predictions,1),1)
+
+    predictions = rot_model.predict_on_batch(objects.astype(int)) # TODO: break up into batches
+    info = np.append(info, np.argmax(predictions,-1)[...,np.newaxis],1)
+    info = np.append(info, np.max(predictions,1)[...,np.newaxis],1)
+
     return objects, info
 
 def get_trajectories(info, distance = 25, max_memory = 10):
