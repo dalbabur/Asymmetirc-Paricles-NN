@@ -78,7 +78,7 @@ def get_trajectories(info, distance = 25, max_memory = 10):
         dummy = list(labels)
         reset = idx
         for f in range(sum(info[:,0] == i)):
-            idx = idx+f
+            idx = reset+f
             # print(['idx',idx,'i',i,'f',f,'total',sum(info[:,0] == i)])
             # plt.plot(info[idx,9],info[idx,10],'*')
             if memory == []:
@@ -111,8 +111,9 @@ def get_trajectories(info, distance = 25, max_memory = 10):
         if sum(info[:,0] == i) > 0:
             if len(memory) >= max_memory:
                 for f in range(sum(info[:,0] == i)):
-                    memory.pop(0)
-                    # print(['memory popped'])
+                    if memory != []:
+                        memory.pop(0)
+                        # print(['memory popped'])
 
             for f in range(sum(info[:,0] == i)):
                 memory.append(info[reset+f,:])
