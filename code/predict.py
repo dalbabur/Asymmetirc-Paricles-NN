@@ -19,6 +19,7 @@ for i in range(1):
     from importlib import reload
     from scipy import optimize
     import matplotlib.animation as animation
+    from scipy import signal
     pipeline2 = reload(pipeline2)
 
 movie = '/L/1466ul_min_2/'
@@ -49,59 +50,57 @@ new_input = to_categorical(final_masks,num_classes = classes)
 new_input2 = (final_masks>0).astype(int);
 
 plt.imshow(new_input2[np.random.randint(data_size-1),...].squeeze())
-plt.imshow(new_input2[2,...].squeeze())
-a = new_input2[1,...][np.newaxis]
 
 # for i in range(1):
 #
-    og = np.zeros(new_input2.shape)
-    i = 0
-    load_ogs = predict_gen.flow_from_directory(
-                    from_path,
-                    target_size = resize,
-                    color_mode = 'grayscale',
-                    batch_size = 1,
-                    class_mode = None,
-                    shuffle = False
-    )
+    # og = np.zeros(new_input2.shape)
+    # i = 0
+    # load_ogs = predict_gen.flow_from_directory(
+    #                 from_path,
+    #                 target_size = resize,
+    #                 color_mode = 'grayscale',
+    #                 batch_size = 1,
+    #                 class_mode = None,
+    #                 shuffle = False
+    # )
+    #
+    # while i < data_size:
+    #     for d in load_ogs:
+    #         og[i,...] = d.squeeze()
+    #         i += 1
+    #         break
 
-    while i < data_size:
-        for d in load_ogs:
-            og[i,...] = d.squeeze()
-            i += 1
-            break
-
-#     start = 0
-#     n_batches = 20
-#     for t in range(start,start+n_batches*BATCH_SIZE):
-#         # plt.figure(figsize=(16, 64))
-#         # plt.imshow(og[t,...].squeeze())
-#         # plt.plot(info[info[:,0]==t,9],info[info[:,0]==t,10],'r*')
-#         # plt.plot(info[info[:,0]==t,5],info[info[:,0]==t,6],'g*')
-#         plt.figure(figsize=(16, 64))
-#         plt.imshow(final_masks[t,...])
-#         plt.plot(info[info[:,0]==t,9],info[info[:,0]==t,10],'r*')
-#         plt.plot(info[info[:,0]==t,5],info[info[:,0]==t,6],'g*')
-#         plt.title(t)
+    start = 100
+    n_batches = 20
+    for t in range(start,start+n_batches*BATCH_SIZE):
+        # plt.figure(figsize=(16, 64))
+        # plt.imshow(og[t,...].squeeze())
+        # plt.plot(info[info[:,0]==t,9],info[info[:,0]==t,10],'r*')
+        # plt.plot(info[info[:,0]==t,5],info[info[:,0]==t,6],'g*')
+        plt.figure(figsize=(16, 64))
+        plt.imshow(final_masks[t,...])
+        plt.plot(info[info[:,0]==t,9],info[info[:,0]==t,10],'r*')
+        plt.plot(info[info[:,0]==t,5],info[info[:,0]==t,6],'g*')
+        plt.title(t)
 #
-fig = plt.figure(figsize=(64,14))
-ims = []
-for i in range(len(d[:,0,0,0])):
-    t=i+1
-
-    fig = plt.figure(figsize=(64,14))
-
-    a1 = plt.subplot(111)
-    coms, = a1.plot(info[info[:,0]==t,9],info[info[:,0]==t,10],'r.',markersize=30)
-    boxs, = a1.plot(info[info[:,0]==t,5],info[info[:,0]==t,6],'g.',markersize=30)
-    im1 = a1.imshow(og[t,...].squeeze(),cmap='gray')
-    plt.imshow(new_input2[1,...].squeeze())
-    ims.append([im1,coms,boxs])
-
-plt.rcParams['animation.ffmpeg_path'] = 'C:/Program Files (x86)/ffmpeg/bin/ffmpeg.exe'
-ani = animation.ArtistAnimation(fig, ims, interval=300)
-ani.save('code/masks2.avi')
-plt.show()
+# fig = plt.figure(figsize=(64,14))
+# ims = []
+# for i in range(len(d[:,0,0,0])):
+#     t=i+1
+#
+#     fig = plt.figure(figsize=(64,14))
+#
+#     a1 = plt.subplot(111)
+#     coms, = a1.plot(info[info[:,0]==t,9],info[info[:,0]==t,10],'r.',markersize=30)
+#     boxs, = a1.plot(info[info[:,0]==t,5],info[info[:,0]==t,6],'g.',markersize=30)
+#     im1 = a1.imshow(og[t,...].squeeze(),cmap='gray')
+#     plt.imshow(new_input2[1,...].squeeze())
+#     ims.append([im1,coms,boxs])
+#
+# plt.rcParams['animation.ffmpeg_path'] = 'C:/Program Files (x86)/ffmpeg/bin/ffmpeg.exe'
+# ani = animation.ArtistAnimation(fig, ims, interval=300)
+# ani.save('code/masks.avi')
+# plt.show()
 #
 # if save_masks:
 #  file_names = listdir(from_path+'/frames/')
@@ -138,136 +137,211 @@ for ii in range(1):
     plt.colorbar()
 
     plt.figure(figsize = (16,8))
+    plt.scatter(info[:,9], info[:,10], marker='o', c = info[:,11], s = info[:,4])
+    plt.colorbar()
+
+    plt.figure(figsize = (16,8))
     plt.hist(info[:,11])
 
     plt.figure(figsize = (8,6))
     [plt.hist(info[info[:,2] == d,4], alpha=0.75, label=d) for d in [0,1,2]]
     plt.legend()
 
-# distances = [54]
-# memories = [3]
-# total = 0
-# f1 = plt.figure(figsize = (32,32))
-#
-# for j in range(len(memories)):
-#     for k in range(len(distances)):
-#         total = total+1
-#         traj, labels, dists = pipeline2.get_trajectories(info,distances[k],memories[j])
-#         a1 = f1.add_subplot(6,6,total)
-#         a1.title.set_text(len(traj))
-#         for i in range(len(traj)):
-#             particles = traj[i][:,2] != 2
-#             a1.plot(traj[i][:,9],traj[i][:,10])
+# FIND PARAMETERS
+distances = [50,60,70]
+memories = [3,5]
+total = 0
+f1 = plt.figure(figsize = (32,32))
 
-traj, labels, dists = pipeline2.get_trajectories(info,54,3)
+for j in range(len(memories)):
+    for k in range(len(distances)):
+        total = total+1
+        traj, labels, dists = pipeline2.get_trajectories(info,distances[k],memories[j])
+        a1 = f1.add_subplot(len(memories),len(distances),total)
+        a1.title.set_text(len(traj))
+        for i in range(len(traj)):
+            particles = traj[i][:,2] != 2
+            a1.plot(traj[i][:,9],traj[i][:,10])
+
+traj, labels, dists = pipeline2.get_trajectories(info,200,3)
+len(traj)
 
 plt.figure(figsize = (24,12))
 for i in range(len(traj)):
-    plt.plot(traj[i][5:-5,9],traj[i][5:-5,10],label = i)
+    plt.plot(traj[i][:,9],traj[i][:,10],'o--',label = i)
+    plt.title(['COM Tracking',i])
 plt.legend()
 
-
+# MAKE MOVIE
 ost = np.zeros(len(traj))
 fig = plt.figure(figsize = (64,14))
 ims = []
 coms = []
 rays = []
-for f in range(og.shape[0]):
+for f in range(new_input2[100:500,...].shape[0]):
+f = 0
+plt.plot(traj[5][:,9],traj[5][:,10],'r')
+for z in range(10):
+    fig = plt.figure(figsize = (64,14))
     a1 = plt.subplot(111)
-    im1 = a1.imshow(og[f,:,:].squeeze(),cmap = 'gray')
+    im1 = plt.imshow(new_input2[f,...].squeeze(),cmap = 'gray')
     for t in range(len(traj)):
         for p in range(len(traj[t])):
             if traj[t][p,0] == f:
-                com1, = a1.plot(traj[t][p,9],traj[t][p,10],'r*',markersize=30)
+                com1, = plt.plot(traj[t][p,9],traj[t][p,10],'r*',markersize=30)
                 ost[t] = ost[t] + 1
                 coms.append(com1)
+                print(t,p)
             if ost[t] == len(traj[t]):
                 ost[t] = 0
-        traj1, = a1.plot(traj[t][0:ost[t].astype(int),9],traj[t][0:ost[t].astype(int),10],'r',linewidth=10)
+        traj1, = plt.plot(traj[t][0:ost[t].astype(int),9],traj[t][0:ost[t].astype(int),10],'r',linewidth=10)
         rays.append(traj1)
     ims.append([im1,*coms,*rays])
     coms, rays = [], []
-
+    f += 1
+plt.figure(figsize = (64,14))
+ims[10]
+plt.draw()
 plt.rcParams['animation.ffmpeg_path'] = 'C:/Program Files (x86)/ffmpeg/bin/ffmpeg.exe'
-ani = animation.ArtistAnimation(fig, ims, interval=200)
-ani.save('code/traj.avi')
+ani = animation.ArtistAnimation(fig, ims, interval=100)
+ani.save('code/traj_U.avi')
 
-for i in range(len(traj)):
-    if len(traj[i][5:-5,9]) >= 4:
+plt.figure(figsize = (24,12))
+signals = [3, 4,5, 9] #range(len(traj))
+for i in range(len(signals)):
+    plt.plot(traj[signals[i]][5:-5,9],traj[signals[i]][5:-5,10],label = signals[i])
+plt.title('COM Tracking')
+plt.legend()
 
-        fig = plt.figure(figsize = (24,12))
-        from scipy.interpolate import splev, splrep
-        x = traj[i][5:-5,9]
-        y = traj[i][5:-5,10]
-        spl = splrep(x, y)
-        x2 = np.linspace(min(traj[i][5:-5,9]), max(traj[i][5:-5,9]), 200)
-        y2 = splev(x2, spl)
+for i in range(1):
+    signals = [1,3,5]
+    i = signals[np.argmax([len(traj[i][5:-5,9]) for i in signals])]
+    signals.remove(i)
 
-        wave = lambda x,a,b,c,d: a*(np.sin(b*x +c)) + d
-        SSE = lambda p: np.sum((y-wave(x,*p)**2))
-        opti = optimize.differential_evolution(SSE, [[0,100],[-100,100],[-100,100],[0, 100]],seed=1)
-        params, params_covariance = optimize.curve_fit(wave, x, y, p0 = opti.x)
+    fig = plt.figure(figsize = (24,12))
 
-        SSE = lambda p: np.sum((y2-wave(x2,*p)**2))
-        opti1 = optimize.differential_evolution(SSE, [[0,100],[-100,100],[-100,100],[0, 100]],seed=1)
-        params1, params_covariance = optimize.curve_fit(wave, x2, y2, p0 = opti1.x)
+    x1 = traj[i][5:-5,9]
+    y1 = traj[i][5:-5,10]
+    a1 = traj[i][5:-5,11]
+    pa1 = traj[i][5:-5,12]*600
 
-        plt.plot(x, y, 'o--', x2, y2,'--',x2,wave(x2,*params),x2,wave(x2,*params1))
+    y_norm1 = 2*(y1-min(y1))/(max(y1)-min(y1))-1
+    # plt.scatter(x1,y_norm1,c=a1, s = pa1)
+    plt.plot(x1,y_norm1)
 
-from scipy import signal
-signals = [1,3,5]
-i = signals[np.argmax([len(traj[i][5:-5,9]) for i in signals])]
-signals.remove(i)
+    num = 50
+    h1, bins = np.histogram(x1,num)
+    all_anorm = np.zeros((len(signals)+1,len(bins)+1,np.mean(h1,dtype = int)+5))
+    all_anorm[:] = np.nan
+    for h in range(len(x1)):
+        if np.nonzero(np.isnan(all_anorm[0,np.digitize(x1,bins)[h]-1,:]).astype(int))[0].size != 0:
+            all_anorm[0,np.digitize(x1,bins)[h]-1,np.min(np.nonzero(np.isnan(all_anorm[0,np.digitize(x1,bins)[h]-1,:]).astype(int)))] = a1[h]
 
-fig = plt.figure(figsize = (24,12))
+    all_x = x1
+    all_y = y_norm1
+    all_a = a1
+    all_pa = pa1
+    for k in range(len(signals)):
+        j = signals[k]
+        x2 = traj[j][5:-5,9]
+        y2 = traj[j][5:-5,10]
+        a2 = traj[j][5:-5,11]
+        pa2 = traj[i][5:-5,12]*600
 
-x1 = traj[i][5:-5,9]
-y1 = traj[i][5:-5,10]
-y_norm1 = 2*(y1-min(y1))/(max(y1)-min(y1))-1
-plt.plot(x1,y_norm1,'o--')
+        y_norm2 = 2*(y2-min(y2))/(max(y2)-min(y2))-1
+        # if k == 2:
+        #     y_norm2 = -y_norm2
+        dx = np.mean(np.diff(x1)) # TODO: shift wrt to x, or angle???
+        shift = (np.argmax(signal.correlate(y_norm1, y_norm2)) - len(y_norm2)) * dx
+        # plt.scatter(x2 + shift, y_norm2,c = a2, s = pa2)
+        plt.plot(x2+shift, y_norm2)
 
-all_x = x1
-all_y = y_norm1
+        all_x = np.append(all_x, x2+shift)
+        all_y = np.append(all_y, y_norm2)
+        all_a = np.append(all_a, a2)
+        all_pa = np.append(all_pa, pa2)
+        for h in range(len(x2)):
+            if np.nonzero(np.isnan(all_anorm[k+1,np.digitize(x2,bins)[h]-1,:]).astype(int))[0].size != 0:
+                all_anorm[k+1,np.digitize(x2,bins)[h]-1,np.min(np.nonzero(np.isnan(all_anorm[k+1,np.digitize(x2,bins)[h]-1,:]).astype(int)))] = a2[h]
+    plt.ylim(1.25,-1.25)
+    signals = [1,3,5]
 
-for j in signals:
-    x2 = traj[j][5:-5,9]
-    y2 = traj[j][5:-5,10]
-    y_norm2 = 2*(y2-min(y2))/(max(y2)-min(y2))-1
-
-    dx = np.mean(np.diff(x1))
-    shift = (np.argmax(signal.correlate(y_norm1, y_norm2)) - len(y_norm2)) * dx
-    plt.plot(x2 + shift, y_norm2,'o--')
-
-    all_x = np.append(all_x, x2+shift)
-    all_y = np.append(all_y, y_norm2)
-signals = [1,3,5]
-
-fig = plt.figure(figsize = (24,12))
-idx = np.argsort(all_x)
-wave = lambda x,a,b,c,d: a*(np.sin(b*x +c))+d
-SSE = lambda p: np.sum((all_y[idx]-wave(all_x[idx],*p)**2))
-opti = optimize.differential_evolution(SSE, [[-1,1],[-1,1],[-1,1],[-1,1]],seed=1)
-params, params_covariance = optimize.curve_fit(wave, all_x[idx], all_y[idx],p0 = opti.x)
-plt.scatter(all_x,all_y)
-plt.plot(all_x[idx], wave(all_x[idx],*params))
-
-fig = plt.figure(figsize = (24,12))
-idx = np.argsort(x1)
-wave = lambda x,a,b,c,d: a*(np.sin(b*x +c))+d
-SSE = lambda p: np.sum((y_norm1[idx]-wave(x1[idx],*p)**2))
-opti = optimize.differential_evolution(SSE, [[-1,1],[-1,1],[-1,1],[-1,1]],seed=1)
-params, params_covariance = optimize.curve_fit(wave, x1[idx], y_norm1[idx],p0 = opti.x)
-plt.scatter(x1,y_norm1)
-plt.plot(x1[idx], wave(x1[idx],*params))
+    fig = plt.figure(figsize = (24,12))
+    idx = np.argsort(all_x)
+    wave = lambda x,a,b,c,d: a*(np.sin(b*(x +c)))+d
+    SSE = lambda p: np.sum((all_y[idx]-wave(all_x[idx],*p)**2))
+    opti = optimize.differential_evolution(SSE, [[-1,1],[-1,1],[-600,600],[-1,1]],seed=1)
+    params, params_covariance = optimize.curve_fit(wave, all_x[idx], all_y[idx],p0 = opti.x)
+    plt.scatter(all_x,all_y,c= all_a, s = all_pa)
+    plt.colorbar()
+    plt.ylim(1.25,-1.25)
+    plt.plot(all_x[idx], wave(all_x[idx],*params))
 
 
-rotnet_model = rotnet(pretrained_weights = 'code/RotNet/weights/RotNet_wAugmentation.h5', classes = 360)
+# fit fourier
+######
+# from symfit import parameters, variables, sin, cos, Fit
+#
+# def fourier_series(x, f, n=0):
+#     """
+#     Returns a symbolic fourier series of order `n`.
+#
+#     :param n: Order of the fourier series.
+#     :param x: Independent variable
+#     :param f: Frequency of the fourier series
+#     """
+#     # Make the parameter objects for all the terms
+#     a0, *a = parameters(','.join(['a{}'.format(i) for i in range(0, n + 1)]))
+#     b = parameters(','.join(['b{}'.format(i) for i in range(1, n + 1)]))
+#     # Construct the series
+#     series = a0 + sum(ai * sin(i * f * x-bi)
+#                      for i, (ai, bi) in enumerate(zip(a, b), start=1))
+#     return series
+#
+# x, y = variables('x, y')
+# w, = parameters('w')
+# model_dict = {y: fourier_series(x, f=w, n=100)}
+# fit = Fit(model_dict, x=all_x, y=all_y)
+# fit_result = fit.execute()
+#
+# plt.scatter(all_x,all_y)
+# plt.plot(all_x, fit.model(x=all_x, **fit_result.params).y, color='green', ls=':')
 
-# might have to break this into smaller batches
-angles = rotnet_model.predict_on_batch(objects).squeeze()
-angles = np.argmax(angles,axis=-1)
-objects[1,...].shape
-np.sum([len(traj[i]) for i in range(len(traj))])
+
+
+# color fitted curve by segments depending on angle
+######
+# from matplotlib.collections import LineCollection
+# from matplotlib.colors import ListedColormap, BoundaryNorm
+# x = np.linspace(min(all_x),max(all_x),num)
+# y = wave(x,*params)
+# dydx = np.nanmean(np.nanmean(all_anorm,-1),0)
+#
+# # Create a set of line segments so that we can color them individually
+# # This creates the points as a N x 1 x 2 array so that we can stack points
+# # together easily to get the segments. The segments array for line collection
+# # needs to be (numlines) x (points per line) x 2 (for x and y)
+# points = np.array([x, y]).T.reshape(-1, 1, 2)
+# segments = np.concatenate([points[:-1], points[1:]], axis=1)
+# segments.shape
+# points.shape
+#
+# fig, axs = plt.subplots(1, 1, sharex=True, sharey=True)
+#
+# # Create a continuous norm to map from data points to colors
+# norm = plt.Normalize(np.nanmin(dydx), np.nanmax(dydx))
+# lc = LineCollection(segments, cmap='viridis', norm=norm)
+# # Set the values used for colormapping
+# lc.set_array(dydx)
+# lc.set_linewidth(2)
+# line = axs.add_collection(lc)
+# fig.colorbar(line, ax=axs)
+#
+# axs.set_xlim(x.min(), x.max())
+# axs.set_ylim(-1.1, 1.1)
+# plt.show()
+
+
 
 for i in range(50):
     plt.figure()

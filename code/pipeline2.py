@@ -56,7 +56,7 @@ def get_objects(y_pred, class_model, rot_model, resize = None, min_size = 66,max
 
     return objects, info
 
-def get_trajectories(info, distance = 25, max_memory = 10):
+def get_trajectories(info, distance = 54, max_memory = 3):
 
     traj = []
     memory = []
@@ -65,7 +65,6 @@ def get_trajectories(info, distance = 25, max_memory = 10):
     labels = []
     all_dists = np.array([])
     while i  < max(info[:,0]).astype(int):
-
     # debugging print outs and plots
     # for z in range(1):
 
@@ -92,7 +91,7 @@ def get_trajectories(info, distance = 25, max_memory = 10):
                 dists = np.zeros(len(memory))
                 for j in range(len(memory)):
                     # print([info[idx,9],info[idx,10]],[memory[j][9],memory[j][10]])
-                    dists[j] = ( (info[idx,9] - memory[j][9])**2 + (info[idx,10] - memory[j][10])**2 + (info[idx,0] - memory[j][0])**2)**(1/2)
+                    dists[j] = ( (info[idx,9] - memory[j][9])**2 + (30*(info[idx,10] - memory[j][10]))**2)**(1/2)
 
                 # print(dists)
                 # print(['argmin',np.argmin(dists)])
