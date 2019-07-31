@@ -65,7 +65,7 @@ for g = 1:generate
         mask = masks{indx(i),id(i)};
 
         if noise == 1, if rand(1) > 0.25, img = imnoise(img, 'poisson'); end, end
-        if transform == 1 
+        if transform == 1
             if rand(1) > 0.10
                 sc = 0.85 + (0.35).*rand(1,2);
                 sh = rand(1,2)-0.5;
@@ -123,12 +123,12 @@ for g = 1:generate
         if rand(1) > 0.10
             q = 2.5*randn(1);
             b2 = imrotate(b2, q, 'crop');
-            bin = imrotate(bin, q, 'crop'); 
+            bin = imrotate(bin, q, 'crop');
         end
         if rand(1) > 0.10
             s = 1+rand(1)/4;
             b2 = imresize(b2,s,'OutputSize',[m,n]);
-            bin = imresize(bin,s,'OutputSize',[m,n],'method','nearest'); 
+            bin = imresize(bin,s,'OutputSize',[m,n],'method','nearest');
         end
     end
 

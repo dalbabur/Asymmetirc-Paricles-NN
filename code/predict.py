@@ -419,7 +419,7 @@ for i in range(1):
 
 pangles = rotnet_model.predict_on_batch(objects/255).squeeze()
 angles = np.argmax(angles, axis= -1)
-for i in range(8):
+for i in range(100,150):
     plt.figure()
     plt.subplot(121)
     plt.imshow(objects[i,...].squeeze())
