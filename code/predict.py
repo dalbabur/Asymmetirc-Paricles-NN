@@ -40,7 +40,7 @@ predict_img_generator = predict_gen.flow_from_directory(
                 shuffle = False
 )
 
-unet_model = unet(pretrained_weights = 'code/UNET/UNET_bin.h5', classes = classes)
+unet_model = unet(pretrained_weights = 'code/UNET/weights/UNET_bin.h5', classes = classes)
 predictions = unet_model.predict_generator(predict_img_generator, steps = n_batches)
 final_masks = np.argmax(predictions,axis=-1)
 new_input = to_categorical(final_masks,num_classes = classes)
@@ -98,7 +98,7 @@ if save_masks:
  for i in range(int(data_size)):
     save_img(path+to_folder+file_names[i],final_masks[i][:,:,np.newaxis])
 
-cnn = classnet(classes = 3 ,pretrained_weights = 'code/ClassNet/ClassNet2.h5',input_size = (32,32,1))
+cnn = classnet(classes = 3 ,pretrained_weights = 'code/ClassNet/weights/ClassNet2.h5',input_size = (32,32,1))
 objects, info = pipeline2.get_objects(new_input2, cnn, resize = (32,32), min_size = 0, max_size = 1600)
 objects.shape
 info.shape
@@ -117,7 +117,7 @@ for ii in range(1):
     plt.colorbar()
 
     plt.figure(figsize = (16,8))
-    plt.scatter(info[:,5], info[:,6], marker='o-', c = info[:,0], s = info[:,4])
+    plt.scatter(info[:,5], info[:,6], marker='o', c = info[:,0], s = info[:,4])
     plt.colorbar()
 
     plt.figure(figsize = (16,8))
@@ -197,7 +197,8 @@ while i  < info.shape[0]:
 plt.plot(k)
 len(traj[3])
 info[0:20,0]
-rotnet_model = rotnet(pretrained_weights = 'code/RotNet/RotNet_wAugmentation.h5', classes = 360)
+
+rotnet_model = rotnet(pretrained_weights = 'code/RotNet/weights/RotNet_wNoise.h5', classes = 360)
 
 # might have to break this into smaller batches
 angles = rotnet_model.predict_on_batch(objects).squeeze()
@@ -267,7 +268,7 @@ for i in range(1):
 
 pangles = rotnet_model.predict_on_batch(objects/255).squeeze()
 angles = np.argmax(angles, axis= -1)
-for i in range(8):
+for i in range(100,150):
     plt.figure()
     plt.subplot(121)
     plt.imshow(objects[i,...].squeeze())
