@@ -75,12 +75,9 @@ def classnet(pretrained_weights = None,input_size = (32,32,1),classes = 1):
     x = MaxPooling2D(pool_size=(2, 2))(x)
 
     x = Flatten()(x)
-    x = Dense(3840, activation='tanh')(x)
-    x = Dropout(0.5)(x)
     x = Dense(2560, activation='tanh')(x)
     x = Dropout(0.5)(x)
-    x = Dense(256, activation='tanh')(x)
-    x = Dropout(0.5)(x)
+
     x = Dense(128, activation='tanh')(x)
     x = Dropout(0.5)(x)
     x = Dense(classes, activation='softmax')(x)

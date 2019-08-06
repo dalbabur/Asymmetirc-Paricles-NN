@@ -1919,7 +1919,6 @@ class BatchFromFilesMixin():
         elif self.class_mode =='HOT':
             return to_categorical(batch_x,self.total_classes)
         elif self.class_mode == 'categorical_bin':
-            batch_x = (batch_x == 1).astype(float)
             batch_y = np.zeros((len(batch_x), len(self.class_indices)),
                                dtype=self.dtype)
             for i, n_observation in enumerate(index_array):

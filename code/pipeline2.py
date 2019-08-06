@@ -46,14 +46,14 @@ def get_objects(y_pred, class_model, rot_model, resize = None, min_size = 66,max
     if resize is not None:
         objects = np.array(objects)[...,np.newaxis]
     info = np.array(info)
-    predictions = class_model.predict(objects.astype(int), 10)
-    info = np.insert(info, 2, np.argmax(predictions,1),1)
-    info = np.insert(info, 3, np.max(predictions,1),1)
 
-    predictions = rot_model.predict_on_batch(objects.astype(int)) # TODO: break up into batches
+    predictions = rot_model.predict(objects.astype('uint8'))
     info = np.append(info, np.argmax(predictions,-1)[...,np.newaxis],1)
     info = np.append(info, np.max(predictions,1)[...,np.newaxis],1)
 
+    predictions = class_model.predict(objects.astype('uint8'))
+    info = np.insert(info, 2, np.argmax(predictions,1),1)
+    info = np.insert(info, 3, np.max(predictions,1),1)
     return objects, info
 
 def get_trajectories(info, distance = 54, max_memory = 3):

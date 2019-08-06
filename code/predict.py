@@ -20,7 +20,9 @@ for i in range(1):
     from scipy import optimize
     import matplotlib.animation as animation
     from scipy import signal
-    pipeline2 = reload(pipeline2)
+    import data_vis_tools as dv
+    pipeline = reload(pipeline)
+    dv = reload(dv)
 
 movie = '/L/1466ul_min_2/'
 from_path = 'code/data/authentic'+movie
@@ -49,26 +51,27 @@ final_masks = np.argmax(predictions,axis=-1)
 new_input = to_categorical(final_masks,num_classes = classes)
 new_input2 = (final_masks>0).astype(int);
 
-plt.imshow(new_input2[np.random.randint(data_size-1),...].squeeze())
+dv.display_segmentation(new_input2, random = True)
+
 
 # for i in range(1):
 #
-    # og = np.zeros(new_input2.shape)
-    # i = 0
-    # load_ogs = predict_gen.flow_from_directory(
-    #                 from_path,
-    #                 target_size = resize,
-    #                 color_mode = 'grayscale',
-    #                 batch_size = 1,
-    #                 class_mode = None,
-    #                 shuffle = False
-    # )
-    #
-    # while i < data_size:
-    #     for d in load_ogs:
-    #         og[i,...] = d.squeeze()
-    #         i += 1
-    #         break
+    og = np.zeros(new_input2.shape)
+    i = 0
+    load_ogs = predict_gen.flow_from_directory(
+                    from_path,
+                    target_size = resize,
+                    color_mode = 'grayscale',
+                    batch_size = 1,
+                    class_mode = None,
+                    shuffle = False
+    )
+
+    while i < data_size:
+        for d in load_ogs:
+            og[i,...] = d.squeeze()
+            i += 1
+            break
 
     start = 100
     n_batches = 20
@@ -109,43 +112,16 @@ plt.imshow(new_input2[np.random.randint(data_size-1),...].squeeze())
 #  for i in range(int(data_size)):
 #     save_img(path+to_folder+file_names[i],final_masks[i][:,:,np.newaxis])
 
-cnn = classnet(classes = 3 ,pretrained_weights = 'code/ClassNet/weights/ClassNet2.h5',input_size = (32,32,1))
-rnn = rotnet(pretrained_weights = 'code/RotNet/weights/RotNet_wAugmentation.h5', classes = 360)
+cnn = classnet(classes = 3 ,pretrained_weights = 'code/ClassNet/weights/ClassNet4slim.h5',input_size = (32,32,1))
+rnn = rotnet(pretrained_weights = 'code/RotNet/weights/RotNet_wNoise.h5', classes = 360)
 objects, info = pipeline2.get_objects(new_input2, cnn, rnn, resize = (32,32), min_size = 0, max_size = 1600)
 
-plt.imshow(objects[np.random.randint(len(objects)-1),...].squeeze())
-info.shape
+dv.display_rotation(objects,random = True)
 
+info.shape
 # [0 1 2  3 4 5 6 7 8   9   10 11 12]
 # [i,k,c,pc,A,x,y,w,h,com1,com2,a,pa]
-
-for ii in range(1):
-    plt.figure(figsize = (8,6))
-    plt.scatter(info[:,2], info[:,3], marker='o', c = info[:,2], s = info[:,4])
-    plt.colorbar()
-
-    plt.figure(figsize = (16,8))
-    plt.scatter(np.arange(len(objects)), info[:,9], marker='o', c = info[:,2], s = info[:,4])
-    plt.colorbar()
-
-    plt.figure(figsize = (16,8))
-    plt.scatter(info[:,5], info[:,6], marker='o', c = info[:,0], s = info[:,4])
-    plt.colorbar()
-
-    plt.figure(figsize = (16,8))
-    plt.scatter(info[:,9], info[:,10], marker='o', c = info[:,2], s = info[:,4])
-    plt.colorbar()
-
-    plt.figure(figsize = (16,8))
-    plt.scatter(info[:,9], info[:,10], marker='o', c = info[:,11], s = info[:,4])
-    plt.colorbar()
-
-    plt.figure(figsize = (16,8))
-    plt.hist(info[:,11])
-
-    plt.figure(figsize = (8,6))
-    [plt.hist(info[info[:,2] == d,4], alpha=0.75, label=d) for d in [0,1,2]]
-    plt.legend()
+dv.object_summary(info)
 
 # FIND PARAMETERS
 distances = [50,60,70]
@@ -156,15 +132,41 @@ f1 = plt.figure(figsize = (32,32))
 for j in range(len(memories)):
     for k in range(len(distances)):
         total = total+1
-        traj, labels, dists = pipeline2.get_trajectories(info,distances[k],memories[j])
+        traj, labels, dists = pipeline.get_trajectories(info,distances[k],memories[j])
         a1 = f1.add_subplot(len(memories),len(distances),total)
         a1.title.set_text(len(traj))
         for i in range(len(traj)):
             particles = traj[i][:,2] != 2
             a1.plot(traj[i][:,9],traj[i][:,10])
 
-traj, labels, dists = pipeline2.get_trajectories(info,200,3)
-len(traj)
+traj, labels, dists = pipeline.get_trajectories(info,200,3)
+
+dv = reload(dv)
+fx = dv.fixed_comx(og,new_input2, traj[4][5:-5,:],figsize = (10,12),width = 40,markersize = 10)
+fx.save('code/test.avi')
+
+plt.plot(np.cos(all_arad),all_y)
+
+all_arad = all_a.copy()
+for i in range(len(all_arad)):
+    if all_arad[i] <= 90:
+        all_arad[i] =  -all_arad[i]*np.pi/180
+    if all_arad[i] < 270 and all_arad[i] > 90:
+        all_arad[i] = -((all_arad[i]-180))*np.pi/180
+    if all_arad[i] < 360 and all_arad[i] >= 270:
+        all_arad[i] = (90-all_arad[i]%90)*np.pi/180
+
+plt.plot(all_x,all_arad,'o')
+plt.plot(all_x,all_a,'o')
+
+# jeffery1 = lambda x,a,b,G: np.arctan(b/a*np.tan(a*b*G*(x)/(a**2+b**2)))
+# SSE = lambda p: np.sum((all_arad[idx[17:-17]]-jeffery1(all_x[idx[17:-17]],*p)**2))
+# opti = optimize.differential_evolution(SSE, [[5,10],[5,15],[0,10]],seed=1)
+# params, params_covariance = optimize.curve_fit(jeffery1, all_x[idx[17:-17]], all_arad[idx[17:-17]],p0 = opti.x,bounds = ([5,5,0],[10,15,10]))
+# plt.plot(all_x[idx[17:-17]],(all_arad[idx[17:-17]]),'o')
+# plt.plot(all_x[idx[17:-17]], jeffery1(all_x[idx[17:-17]],*params),'o')
+# plt.plot(np.linspace(0,640,100),jeffery1(np.linspace(0,640,100),*params),'o')
+# plt.plot(np.cos(jeffery1(all_x[idx[17:-17]],*params)),all_y[idx[17:-17]])
 
 plt.figure(figsize = (24,12))
 for i in range(len(traj)):
@@ -173,48 +175,18 @@ for i in range(len(traj)):
 plt.legend()
 
 # MAKE MOVIE
-ost = np.zeros(len(traj))
-fig = plt.figure(figsize = (64,14))
-ims = []
-coms = []
-rays = []
-for f in range(new_input2[100:500,...].shape[0]):
-f = 0
-plt.plot(traj[5][:,9],traj[5][:,10],'r')
-for z in range(10):
-    fig = plt.figure(figsize = (64,14))
-    a1 = plt.subplot(111)
-    im1 = plt.imshow(new_input2[f,...].squeeze(),cmap = 'gray')
-    for t in range(len(traj)):
-        for p in range(len(traj[t])):
-            if traj[t][p,0] == f:
-                com1, = plt.plot(traj[t][p,9],traj[t][p,10],'r*',markersize=30)
-                ost[t] = ost[t] + 1
-                coms.append(com1)
-                print(t,p)
-            if ost[t] == len(traj[t]):
-                ost[t] = 0
-        traj1, = plt.plot(traj[t][0:ost[t].astype(int),9],traj[t][0:ost[t].astype(int),10],'r',linewidth=10)
-        rays.append(traj1)
-    ims.append([im1,*coms,*rays])
-    coms, rays = [], []
-    f += 1
-plt.figure(figsize = (64,14))
-ims[10]
-plt.draw()
-plt.rcParams['animation.ffmpeg_path'] = 'C:/Program Files (x86)/ffmpeg/bin/ffmpeg.exe'
-ani = animation.ArtistAnimation(fig, ims, interval=100)
+ani = dv.traj_movie(new_input2,traj, range = [0,new_input2.shape[0]-1])
 ani.save('code/traj_U.avi')
 
 plt.figure(figsize = (24,12))
-signals = [3, 4,5, 9] #range(len(traj))
+signals = [1,3, 4] #range(len(traj))
 for i in range(len(signals)):
     plt.plot(traj[signals[i]][5:-5,9],traj[signals[i]][5:-5,10],label = signals[i])
 plt.title('COM Tracking')
 plt.legend()
 
 for i in range(1):
-    signals = [1,3,5]
+    signals = [4]
     i = signals[np.argmax([len(traj[i][5:-5,9]) for i in signals])]
     signals.remove(i)
 
@@ -227,7 +199,7 @@ for i in range(1):
 
     y_norm1 = 2*(y1-min(y1))/(max(y1)-min(y1))-1
     # plt.scatter(x1,y_norm1,c=a1, s = pa1)
-    plt.plot(x1,y_norm1)
+    plt.plot(x1,y1)
 
     num = 50
     h1, bins = np.histogram(x1,num)
@@ -238,7 +210,7 @@ for i in range(1):
             all_anorm[0,np.digitize(x1,bins)[h]-1,np.min(np.nonzero(np.isnan(all_anorm[0,np.digitize(x1,bins)[h]-1,:]).astype(int)))] = a1[h]
 
     all_x = x1
-    all_y = y_norm1
+    all_y = y1
     all_a = a1
     all_pa = pa1
     for k in range(len(signals)):
@@ -252,18 +224,17 @@ for i in range(1):
         # if k == 2:
         #     y_norm2 = -y_norm2
         dx = np.mean(np.diff(x1)) # TODO: shift wrt to x, or angle???
-        shift = (np.argmax(signal.correlate(y_norm1, y_norm2)) - len(y_norm2)) * dx
+        shift = (np.argmax(signal.correlate(y1, y2)) - len(y2)) * dx
         # plt.scatter(x2 + shift, y_norm2,c = a2, s = pa2)
-        plt.plot(x2+shift, y_norm2)
+        plt.plot(x2+shift, y2)
 
         all_x = np.append(all_x, x2+shift)
-        all_y = np.append(all_y, y_norm2)
+        all_y = np.append(all_y, y2)
         all_a = np.append(all_a, a2)
         all_pa = np.append(all_pa, pa2)
         for h in range(len(x2)):
             if np.nonzero(np.isnan(all_anorm[k+1,np.digitize(x2,bins)[h]-1,:]).astype(int))[0].size != 0:
                 all_anorm[k+1,np.digitize(x2,bins)[h]-1,np.min(np.nonzero(np.isnan(all_anorm[k+1,np.digitize(x2,bins)[h]-1,:]).astype(int)))] = a2[h]
-    plt.ylim(1.25,-1.25)
     signals = [1,3,5]
 
     fig = plt.figure(figsize = (24,12))
@@ -274,7 +245,6 @@ for i in range(1):
     params, params_covariance = optimize.curve_fit(wave, all_x[idx], all_y[idx],p0 = opti.x)
     plt.scatter(all_x,all_y,c= all_a, s = all_pa)
     plt.colorbar()
-    plt.ylim(1.25,-1.25)
     plt.plot(all_x[idx], wave(all_x[idx],*params))
 
 
