@@ -175,10 +175,10 @@ for i in range(1):
 
 cnn = classnet(pretrained_weights = 'code/ClassNet/weights/ClassNet4.h5',classes = classes, input_size = (*resize,1))
 for i in range(1):
-    n = 10
+    n = 500
     i = 0
     test_imgs,test_labels = list(),list()
-    for imgs,labels in img_train.flow_from_directory(
+    for imgs,labels in ImageDataGenerator(rotation_range = 360).flow_from_directory(
                     path,
                     target_size = resize,
                     color_mode = 'grayscale',

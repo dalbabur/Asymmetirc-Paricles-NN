@@ -12,7 +12,7 @@ for i in range(1):
     from UNET_model import *
     from RotNet_model import *
     from ClassNet_model import *
-    import pipeline2
+    import pipeline
     from keras.callbacks import *
     import numpy as np
     from keract import *
@@ -24,7 +24,7 @@ for i in range(1):
     pipeline = reload(pipeline)
     dv = reload(dv)
 
-movie = '/L/1466ul_min_2/'
+movie = '/U/1466ul_min_1/'
 from_path = 'code/data/authentic'+movie
 save_masks = False
 data_size = 454
@@ -51,8 +51,7 @@ final_masks = np.argmax(predictions,axis=-1)
 new_input = to_categorical(final_masks,num_classes = classes)
 new_input2 = (final_masks>0).astype(int);
 
-dv.display_segmentation(new_input2, random = True)
-
+dv.display_segmentation(new_input2, random = False, frames = range(550,700))
 
 # for i in range(1):
 #
@@ -114,7 +113,7 @@ dv.display_segmentation(new_input2, random = True)
 
 cnn = classnet(classes = 3 ,pretrained_weights = 'code/ClassNet/weights/ClassNet4slim.h5',input_size = (32,32,1))
 rnn = rotnet(pretrained_weights = 'code/RotNet/weights/RotNet_wNoise.h5', classes = 360)
-objects, info = pipeline2.get_objects(new_input2, cnn, rnn, resize = (32,32), min_size = 0, max_size = 1600)
+objects, info = pipeline.get_objects(new_input2[0:500,...], cnn, rnn, resize = (32,32), min_size = 0, max_size = 1600)
 
 dv.display_rotation(objects,random = True)
 
@@ -124,29 +123,27 @@ info.shape
 dv.object_summary(info)
 
 # FIND PARAMETERS
-distances = [50,60,70]
-memories = [3,5]
-total = 0
-f1 = plt.figure(figsize = (32,32))
+for i in range(1):
+    distances = [75,100]
+    memories = [3,5]
+    total = 0
+    f1 = plt.figure(figsize = (32,32))
 
-for j in range(len(memories)):
-    for k in range(len(distances)):
-        total = total+1
-        traj, labels, dists = pipeline.get_trajectories(info,distances[k],memories[j])
-        a1 = f1.add_subplot(len(memories),len(distances),total)
-        a1.title.set_text(len(traj))
-        for i in range(len(traj)):
-            particles = traj[i][:,2] != 2
-            a1.plot(traj[i][:,9],traj[i][:,10])
+    for j in range(len(memories)):
+        for k in range(len(distances)):
+            total = total+1
+            traj, labels, dists = pipeline.get_trajectories(info,distances[k],memories[j])
+            a1 = f1.add_subplot(len(memories),len(distances),total)
+            a1.title.set_text(len(traj))
+            for i in range(len(traj)):
+                particles = traj[i][:,2] != 2
+                a1.plot(traj[i][:,9],traj[i][:,10])
 
-traj, labels, dists = pipeline.get_trajectories(info,200,3)
+traj, labels, dists = pipeline.get_trajectories(info,65,3)
 
-dv = reload(dv)
-fx = dv.fixed_comx(og,new_input2, traj[4][5:-5,:],figsize = (10,12),width = 40,markersize = 10)
-fx.save('code/test.avi')
 
-plt.plot(np.cos(all_arad),all_y)
 
+#
 all_arad = all_a.copy()
 for i in range(len(all_arad)):
     if all_arad[i] <= 90:
@@ -156,41 +153,42 @@ for i in range(len(all_arad)):
     if all_arad[i] < 360 and all_arad[i] >= 270:
         all_arad[i] = (90-all_arad[i]%90)*np.pi/180
 
+plt.plot(np.cos(all_arad),all_y)
+plt.plot(all_x[idx],all_arad[idx],'o')
 plt.plot(all_x,all_arad,'o')
-plt.plot(all_x,all_a,'o')
 
-# jeffery1 = lambda x,a,b,G: np.arctan(b/a*np.tan(a*b*G*(x)/(a**2+b**2)))
-# SSE = lambda p: np.sum((all_arad[idx[17:-17]]-jeffery1(all_x[idx[17:-17]],*p)**2))
-# opti = optimize.differential_evolution(SSE, [[5,10],[5,15],[0,10]],seed=1)
-# params, params_covariance = optimize.curve_fit(jeffery1, all_x[idx[17:-17]], all_arad[idx[17:-17]],p0 = opti.x,bounds = ([5,5,0],[10,15,10]))
-# plt.plot(all_x[idx[17:-17]],(all_arad[idx[17:-17]]),'o')
-# plt.plot(all_x[idx[17:-17]], jeffery1(all_x[idx[17:-17]],*params),'o')
-# plt.plot(np.linspace(0,640,100),jeffery1(np.linspace(0,640,100),*params),'o')
-# plt.plot(np.cos(jeffery1(all_x[idx[17:-17]],*params)),all_y[idx[17:-17]])
+jeffery1 = lambda x,a,b,G: np.arctan(b/a*np.tan(a*b*G*(x)/(a**2+b**2)))
+SSE = lambda p: np.sum((all_arad-jeffery1(all_x,*p)**2))
+opti = optimize.differential_evolution(SSE, [[5,10],[5,15],[0,10]],seed=1)
+params, params_covariance = optimize.curve_fit(jeffery1, all_x, all_arad,p0 = opti.x,bounds = ([5,5,0],[10,15,10]))
+plt.plot(all_x[idx[17:-17]],(all_arad[idx[17:-17]]),'o')
+plt.plot(all_x[idx[17:-17]], jeffery1(all_x[idx[17:-17]],*params),'o')
+plt.plot(np.linspace(0,30,len(all_y)),jeffery1(np.linspace(0,30,len(all_y)),*params),'o')
+plt.plot(np.cos(jeffery1(np.linspace(0,30,len(all_y)),*params)),all_y)
 
 plt.figure(figsize = (24,12))
-for i in range(len(traj)):
-    plt.plot(traj[i][:,9],traj[i][:,10],'o--',label = i)
+for i in range(15):
+    plt.plot(traj[i][5:-5,9],traj[i][5:-5,10],'o--',label = i)
     plt.title(['COM Tracking',i])
 plt.legend()
+plt.ylim(45,40)
 
 # MAKE MOVIE
-ani = dv.traj_movie(new_input2,traj, range = [0,new_input2.shape[0]-1])
+ani = dv.traj_movie(new_input2,traj, frames = [550,720]) # TODO: implment not starting at 0 !
 ani.save('code/traj_U.avi')
 
 plt.figure(figsize = (24,12))
-signals = [1,3, 4] #range(len(traj))
+signals = [10] #range(len(traj))
 for i in range(len(signals)):
     plt.plot(traj[signals[i]][5:-5,9],traj[signals[i]][5:-5,10],label = signals[i])
 plt.title('COM Tracking')
 plt.legend()
 
 for i in range(1):
-    signals = [4]
-    i = signals[np.argmax([len(traj[i][5:-5,9]) for i in signals])]
+    i = signals[np.argmax([len(traj[i][5:-5,11]) for i in signals])]
     signals.remove(i)
 
-    fig = plt.figure(figsize = (24,12))
+    fig = plt.figure()
 
     x1 = traj[i][5:-5,9]
     y1 = traj[i][5:-5,10]
@@ -198,8 +196,8 @@ for i in range(1):
     pa1 = traj[i][5:-5,12]*600
 
     y_norm1 = 2*(y1-min(y1))/(max(y1)-min(y1))-1
-    # plt.scatter(x1,y_norm1,c=a1, s = pa1)
-    plt.plot(x1,y1)
+    # plt.scatter(x1,y1,c=a1, s = pa1)
+    plt.plot(x1,a1)
 
     num = 50
     h1, bins = np.histogram(x1,num)
@@ -224,9 +222,9 @@ for i in range(1):
         # if k == 2:
         #     y_norm2 = -y_norm2
         dx = np.mean(np.diff(x1)) # TODO: shift wrt to x, or angle???
-        shift = (np.argmax(signal.correlate(y1, y2)) - len(y2)) * dx
-        # plt.scatter(x2 + shift, y_norm2,c = a2, s = pa2)
-        plt.plot(x2+shift, y2)
+        shift = (np.argmax(signal.correlate(a1, a2)) - len(a2)) * dx
+        # plt.scatter(x2 + shift, y2,c = a2, s = pa2)
+        plt.plot(x2+shift, a2)
 
         all_x = np.append(all_x, x2+shift)
         all_y = np.append(all_y, y2)
@@ -246,7 +244,9 @@ for i in range(1):
     plt.scatter(all_x,all_y,c= all_a, s = all_pa)
     plt.colorbar()
     plt.plot(all_x[idx], wave(all_x[idx],*params))
-
+plt.plot(all_x[idx],all_y[idx],'o--')
+fx = dv.fixed_comx(og,new_input2, traj[10][5:-5,:], figsize = (10,12), width = 40, markersize = 10)
+fx.save('code/test_fixed_comx_U.avi')
 
 # fit fourier
 ######

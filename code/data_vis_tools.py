@@ -26,13 +26,13 @@ def display_rotation(objects,random = True, frames = None):
             plt.imshow(objects[frames[i],...].squeeze())
     return
 
-def traj_movie(imgs = None, traj = None, range = []):
+def traj_movie(imgs = None, traj = None, frames = []):
     ost = np.zeros(len(traj))
     fig = plt.figure(figsize = (64,14))
     ims = []
     coms = []
     rays = []
-    for f in range(range[0],range[1]):
+    for f in range(frames[0],frames[1]):
         a1 = plt.subplot(111)
         im1 = plt.imshow(imgs[f,...].squeeze(),cmap = 'gray')
         for t in range(len(traj)):

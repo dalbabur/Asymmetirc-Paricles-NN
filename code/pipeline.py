@@ -76,6 +76,7 @@ def get_trajectories(info, distance = 54, max_memory = 3):
 
         dummy = list(labels)
         reset = idx
+        available = np.ones(len(memory), dtype=bool)
         for f in range(sum(info[:,0] == i)):
             idx = reset+f
             # print(['idx',idx,'i',i,'f',f,'total',sum(info[:,0] == i)])
@@ -91,7 +92,10 @@ def get_trajectories(info, distance = 54, max_memory = 3):
                 dists = np.zeros(len(memory))
                 for j in range(len(memory)):
                     # print([info[idx,9],info[idx,10]],[memory[j][9],memory[j][10]])
-                    dists[j] = ( (info[idx,9] - memory[j][9])**2 + (30*(info[idx,10] - memory[j][10]))**2)**(1/2)
+                    if available[j]:
+                        dists[j] = ( (info[idx,9] - memory[j][9])**2 + (30*(info[idx,10] - memory[j][10]))**2)**(1/2)
+                    else:
+                        dists[j] = np.inf
 
                 # print(dists)
                 # print(['argmin',np.argmin(dists)])
@@ -102,6 +106,7 @@ def get_trajectories(info, distance = 54, max_memory = 3):
                     traj[label] = np.append(traj[label],info[idx,:][np.newaxis],axis=0)
                     # print(['append to old object',label])
                     labels.append(label)
+                    available[np.argmin(dists)] = False
                 else:
                     traj.append(info[idx,:][np.newaxis])
                     labels.append(max(labels)+1)
