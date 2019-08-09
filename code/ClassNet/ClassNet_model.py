@@ -28,8 +28,6 @@ def tversky_loss(y_true, y_pred):
 
     num = K.sum(p0*g0, (0,1)) + K.epsilon()
     den = num + alpha*K.sum(p0*g1,(0,1)) + beta*K.sum(p1*g0,(0,1))+K.epsilon()
-    print(num)
-    print(den)
 
     T = K.sum(num/den) # when summing over classes, T has dynamic range [0 Ncl]
 

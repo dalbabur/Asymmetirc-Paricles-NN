@@ -25,7 +25,7 @@ for i in range(1):
     dv = reload(dv)
 
 path = 'C:/Users/Diego/Documents/MATLAB/JHU/HUR/asymmetricParticles/AsymParticles/code'
-movie = '/L/1466ul_min_2/'
+movie = '/U/1466ul_min_1/'
 from_path = 'code/data/authentic'+movie
 data_size = 454
 
@@ -34,6 +34,7 @@ classification_resize = (32,32)
 
 save_masks = False
 full_mask_folder = '/data/predicted/mask/'+movie
+
 save_objects_for_assisted_learning_classification = True
 particle_mask_folder = '/UNET/data/synthetic/particles/masks/'+movie[1:3]
 
@@ -42,7 +43,7 @@ segmentation_classes = 2
 classification_classes = 3
 rotation_classes = 360
 
-segmentaion_weights = 'code/UNET/weights/UNET_bin.h5'
+segmentation_weights = 'code/UNET/weights/UNET_bin.h5'
 classification_weights = 'code/ClassNet/weights/ClassNet4slim.h5'
 rotation_weights = 'code/RotNet/weights/RotNet_wNoise.h5'
 
@@ -51,23 +52,22 @@ n_batches = data_size/BATCH_SIZE
 predict_gen = ImageDataGenerator(rescale = 1./255)
 predict_img_generator = predict_gen.flow_from_directory(
                 from_path,
-                target_size = segmentaion_resize,
+                target_size = segmentation_resize,
                 color_mode = 'grayscale',
                 batch_size = BATCH_SIZE,
                 class_mode = None,
                 shuffle = False
 )
 
-unet_model = unet(pretrained_weights = segmentaion_weights, classes = segmentation_classes)
+unet_model = unet(pretrained_weights = segmentation_weights, classes = segmentation_classes)
 predictions = unet_model.predict_generator(predict_img_generator, steps = n_batches)
-final_masks = np.argmax(predictions,axis=-1)
-new_input2 = (final_masks>0).astype(int);
+final_masks = np.argmax(predictions,axis=-1).astype('uint8')
 
-dv.display_segmentation(new_input2, random = False, frames = range(0,5))
+dv.display_segmentation(final_masks, random = False, frames = range(0,500))
 
 # for i in range(1):
 #
-    # og = np.zeros(new_input2.shape)
+    # og = np.zeros(final_masks.shape)
     # i = 0
     # load_ogs = predict_gen.flow_from_directory(
     #                 from_path,
@@ -106,7 +106,7 @@ dv.display_segmentation(new_input2, random = False, frames = range(0,5))
 
 cnn = classnet(classes = classification_classes ,pretrained_weights = classification_weights,input_size = classification_resize + (1,) )
 rnn = rotnet(pretrained_weights = rotation_weights, classes = rotation_classes)
-objects, info = pipeline.get_objects(new_input2[0:500,...], cnn, rnn, resize = classification_resize, min_size = 0, max_size = 1600)
+objects, info = pipeline.get_objects(final_masks, cnn, rnn, resize = classification_resize, min_size = 0, max_size = 1600)
 
 dv.display_rotation(objects,random = True)
 
@@ -133,34 +133,57 @@ dv.object_summary(info)
 #                 a1.plot(traj[i][:,9],traj[i][:,10])
 
 traj, labels, dists = pipeline.get_trajectories(info,65,3)
-
-
-
-
+len(labels)
+labels[-50:]
 
 plt.figure(figsize = (24,12))
-for i in range(15):
+for i in range(43):
     plt.plot(traj[i][5:-5,9],traj[i][5:-5,10],'o--',label = i)
     plt.title(['COM Tracking',i])
 plt.legend()
 plt.ylim(45,40)
 
 # MAKE MOVIE
-ani = dv.traj_movie(new_input2,traj, frames = [550,720]) # TODO: implment not starting at 0 !
-ani.save('code/traj_U.avi')
+# ani = dv.traj_movie(new_input2,traj, frames = [550,720]) # TODO: implment not starting at 0 !
+# ani.save('code/traj_U.avi')
 
+len(traj[10])
 plt.figure(figsize = (24,12))
-signals = [10,11] #range(len(traj))
+signals = [32] # pick which trajectories to analyze (this is because classification is not reliable yet)
 for i in range(len(signals)):
-    plt.plot(traj[signals[i]][5:-5,9],traj[signals[i]][5:-5,10],label = signals[i])
+    plt.plot(traj[signals[i]][5:-5,9],traj[signals[i]][5:-5,10],'o--',label = signals[i])
 plt.title('COM Tracking')
 plt.legend()
 
+for i in range(len(objects)):
+    plt.figure()
+    plt.imshow(objects[i].squeeze())
+    plt.title([i])
+
+for i in range(len(traj)):
+    plt.figure()
+    plt.subplot(131)
+    plt.imshow(objects[int(traj[i][0,0]),...].squeeze())
+    plt.title([i,0,int(traj[i][0,0])])
+    r = np.random.randint(0,len(traj[i]))
+    plt.subplot(132)
+    plt.imshow(objects[int(traj[i][r,0]),...].squeeze())
+    plt.title([i,r,int(traj[i][r,0])])
+    plt.subplot(133)
+    plt.imshow(objects[int(traj[i][-1,0]),...].squeeze())
+    plt.title([i,len(traj[i]),int(traj[i][-1,0])])
+
+test1 = np.zeros((len(objects),len(objects)))
+test2 = test1.copy()
+for i in range(len(objects)):
+    for j in range(len(objects)):
+        test1[i,j] = np.corrcoef(objects[0,...].flat,objects[2,...].flat)[0,1]
+        test2[i,j] = np.sum(objects[0,...] == objects[2,...]) / objects[0,...].size
+
 if save_objects_for_assisted_learning_classification:
-
-
-
-
+    for i in signals:
+        for j in traj[i][:,0]:
+            save_img(path+particle_mask_folder+str(i)+'-'+str(j)+'.tif',objects[int(j),...], scale = False)
 
 for i in range(1):
     i = signals[np.argmax([len(traj[i][5:-5,11]) for i in signals])]
