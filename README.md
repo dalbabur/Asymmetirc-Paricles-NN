@@ -33,7 +33,7 @@ This repository contains all code pertaining to the different neural networks (.
 
 ## Getting Started
 
-These instructions will get you a copy of the project up and running on your local machine for development and testing purposes.
+These instructions will get you a copy of the project up and running on your local machine for development and testing purposes.  
 *Disclaimer*: this is all for Windows 10, macOS or Linux could be very different.
 
 ### Prerequisites
@@ -85,7 +85,7 @@ This section, as well as the code, is broken up into the following topics:
 The raw data (.cine) can be found in Chris' Drobo; the folder/file name indicate which particle and which flowrate. The particles are relatively sparse (most frames contain no particles), so you'll need to spend some time extracting the relevant frames and converting them to .tif images. Some ways of doing this:
 
  - by hand: in PCC look at each frame and save as .tif if contains a particle. Pros: accurate. Cons: time consuming, mindless.
- - using *code\cine_utils\spitObj.m*: hijacked code from Chris that will correlate each frame to a background (frame with no particles) and save those frames with lower correlation than a set threshold. Pros: automatic. Cons: empirical (threshold), takes long time to run, inaccurate.
+ - using [*code\cine_utils\spitObj.m*]((https://github.com/ijungsj/Asymmetric-Particles/tree/master/code/cine_utils/spitObj.m): hijacked code from Chris that will correlate each frame to a background (frame with no particles) and save those frames with lower correlation than a set threshold. Pros: automatic. Cons: empirical (threshold), takes long time to run, inaccurate.
  - exploiting Annie's work: there are .mat files for every movie that contain information about her analysis. There is a variable that contains all frame numbers with particles: it's only a matter of extracting those frame numbers and reading them. Pros: much faster. Cons: unsure of Annie's accuracy, not yet implemented. [More on this later.](#last-thoughts-current-state-and-future-direction)
 
 This raw data needs to be transformed into the correct input for each neural network, a transformation that will be addressed in the corresponding NN section.
@@ -111,7 +111,7 @@ Since the raw data is not suited to trained a neural networks (it's not labeled)
 ``` matlab
 generate = 5120; 		% how many images to generate
 max_objs = 7; 			% maximum number of objects per frame
-folder = '\data\train'; % folder to save the generated images to, either \train or \test
+folder = '\data\train';     % folder to save the generated images to, either \train or \test
 noise = 1; 			% boolean, whether or not to add poisson noise to the particle
 transform = 1; 			% boolean, whether or not to transform the particles (rotate,resize,shear,crop)
 
@@ -143,7 +143,7 @@ test_size = 2560 		# total number of frames for testing
 classes = 2 			# number of classes to segment
 BATCH_SIZE = 5			# number of frames to take at once (mainly depends on your memory size)
 epoch = 20  			# number of times to loop through the entire data
-resize = (64,640)				# new dimensions for the frame (raw is 128x1280)
+resize = (64,640)			# new dimensions for the frame (raw is 128x1280)
 weights = 'code/UNET/UNET_bin.h5' 	# where to save the weights after training is complete
 ```
 #### Workflow:
