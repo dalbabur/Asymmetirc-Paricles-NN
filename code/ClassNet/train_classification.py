@@ -23,12 +23,12 @@ for i in range(1):
     import data_vis_tools as dv
 
 path = 'C:/Users/Diego/Documents/MATLAB/JHU/HUR/asymmetricParticles/AsymParticles/code/UNET/data/synthetic/particles/masks/'
-
 data_size = 150
 BATCH_SIZE = 20
 nb_epoch = 200
 resize = (32,32)
 classes = 3
+weights = 'code/ClassNet/weights/ClassNet4slim.h5'
 
 def no_noise(img):
     imgs = img.copy()
@@ -137,10 +137,9 @@ test_img_generator = img_test.flow_from_directory(
 )
 
 cnn = classnet(classes = classes, input_size = (*resize,1))
-cnn.summary()
 
-callbacks = [ModelCheckpoint('code/ClassNet/weights/ClassNet4slim.h5', verbose=1, save_best_only=True, save_weights_only=True,monitor='loss'),
-                ReduceLROnPlateau(monitor='loss', factor=0.75,patience=15,mdoe='min',verbose=1,min_lr=10^-6)]
+callbacks = [ModelCheckpoint(weights, verbose=1, save_best_only=True, save_weights_only=True,monitor='loss'),
+                ReduceLROnPlateau(monitor='loss', factor=0.75,patience=15,mode='min',verbose=1,min_lr=10^-6)]
 
 h = cnn.fit_generator(
     train_img_generator,
@@ -173,7 +172,6 @@ for i in range(1):
     plt.legend()
     plt.show()
 
-cnn = classnet(pretrained_weights = 'code/ClassNet/weights/ClassNet4.h5',classes = classes, input_size = (*resize,1))
 for i in range(1):
     n = 500
     i = 0

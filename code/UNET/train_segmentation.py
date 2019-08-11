@@ -13,7 +13,9 @@ data_size = 5170
 test_size = 2560
 classes = 2
 BATCH_SIZE = 5
+epoch = 20
 resize = (64,640)
+weights = 'code/UNET/UNET_bin.h5'
 
 def binmask(img):
     return img>0
@@ -72,13 +74,13 @@ for i in range(1):
     test_generator = zip(test_img_generator, test_mask_generator)
     callbacks = [                                                 # TODO: MONITOR VAL_LOSS IF POSSIBLE
         #EarlyStopping(patience=5, verbose=1, monitor = 'loss'),    # there seems to be some problem with ES and RLROP, possibly caused by PATIENCE
-        ModelCheckpoint('code/UNET/UNET_bin.h5', verbose=1, save_best_only=True, save_weights_only=True, monitor = 'loss'),
-        ReduceLROnPlateau(monitor='loss', factor=0.2,patience=3,mdoe='min',verbose=1,cooldown=1)
+        ModelCheckpoint(weights, verbose=1, save_best_only=True, save_weights_only=True, monitor = 'loss'),
+        ReduceLROnPlateau(monitor='loss', factor=0.2,patience=3,mode='min',verbose=1,cooldown=1)
     ]
 
 h = unet(classes = classes).fit_generator(                          # TODO: FIGURE OUT IF USING VALIDATOIN IS POSSIBLE (rn bathces become all crazy)
                 train_generator,
-                epochs = 20,                                        # remmeber you can continue training if you just load weights
+                epochs = epoch,                                        # remmeber you can continue training if you just load weights
                 steps_per_epoch = data_size/BATCH_SIZE,
                 validation_data = test_generator,
                 validation_steps = test_size/BATCH_SIZE,
@@ -102,7 +104,7 @@ for i in range(1):
     plt.legend()
     plt.show()
 
-model = unet(pretrained_weights = 'code/UNET/UNET_bin.h5', classes =classes)
+model = unet(pretrained_weights = weights, classes =classes)
 model.evaluate_generator(test_generator, steps=test_size/BATCH_SIZE)
 
 for i in range(1):
