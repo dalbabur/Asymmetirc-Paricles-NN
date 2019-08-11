@@ -161,24 +161,29 @@ for i in range(len(objects)):
     plt.title([i])
 
 for i in range(len(traj)):
+    plt.figure(figsize = (24,6))
+    i=10
+    for j in range(len(traj[i])):
+        plt.subplot(1,len(traj[i]),j+1)
+        k = int(traj[i][j,0])
+        a = cv2.resize(rotate(objects[k,...],info[k,11]),(32,32))
+        b = objects[k,...].squeeze()
+        plt.imshow(b)
     plt.figure()
-    plt.subplot(131)
-    plt.imshow(objects[int(traj[i][0,0]),...].squeeze())
-    plt.title([i,0,int(traj[i][0,0])])
-    r = np.random.randint(0,len(traj[i]))
-    plt.subplot(132)
-    plt.imshow(objects[int(traj[i][r,0]),...].squeeze())
-    plt.title([i,r,int(traj[i][r,0])])
-    plt.subplot(133)
-    plt.imshow(objects[int(traj[i][-1,0]),...].squeeze())
-    plt.title([i,len(traj[i]),int(traj[i][-1,0])])
+    plt.plot(test1[i,:len(traj[i])])
 
-test1 = np.zeros((len(objects),len(objects)))
-test2 = test1.copy()
-for i in range(len(objects)):
-    for j in range(len(objects)):
-        test1[i,j] = np.corrcoef(objects[0,...].flat,objects[2,...].flat)[0,1]
-        test2[i,j] = np.sum(objects[0,...] == objects[2,...]) / objects[0,...].size
+test1 = np.zeros((len(traj),60))
+for j in range(len(traj)):
+    for i in range(len(traj[j])-1):
+        k = int(traj[j][i,0])
+        a = cv2.resize(rotate(objects[k,...],info[k,11]),(32,32))
+        b = cv2.resize(rotate(objects[k+1,...],info[k+1,11]),(32,32))
+        test1[j,i] = np.corrcoef(a.flat,b.flat)[0,1]
+
+
+
+
+plt.plot(test1)
 
 if save_objects_for_assisted_learning_classification:
     for i in signals:

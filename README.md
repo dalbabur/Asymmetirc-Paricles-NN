@@ -1,4 +1,3 @@
-
 # Asymmetric Particles
 
 The aim of this project is to study the **dynamic behavior of asymmetric particles** under **inertial focusing** conditions (high Re) in microchannels. Properties such as focusing position/s, angular velocity, and preferred orientation, could shine a light on the forces that govern this phenomenon, and inspire novel bioassays based on asymmetric particles.
@@ -7,29 +6,47 @@ In order to extract these properties from the raw footage, it is necessary to **
 
 This repository contains all code pertaining to the different neural networks (.py), the data generation for training and validating the models (.m), and some example movies for the current state of the analysis (.avi). It **DOES NOT** contain the raw data (.cine), the individual frames (.tif), the cropped images (.tif), the binary masks (.tif), or the trained weights (.h5) for the networks. The copy of the repository backed up in **Drobo** does contain all of these files.
 
-### Background Information
+## Table of Contents
 
- - **Inertial Focusing and Previous Work**:
+  * [Background Information](#background-information)
+    + [Inertial Focusing and Previous Work](#inertial-focusing-and-previous-work)
+    + [Neural Networks](#neural-networks)
+    + [About GitHub](#about-github)
+    + [About this Repo](#about-this-repo)  
+  * [Getting Started](#getting-started)
+    + [Prerequisites](#prerequisites)
+    + [Installing](#installing)
+  * [Unravelling the Code](#unravelling-the-code)
+    + [The raw data and the training data](#the-raw-data-and-the-training-data)
+    + [Image segmentation](#image-segmentation)
+    + [Particle classification](#particle-classification)
+    + [Particle orientation](#particle-orientation)
+    + [Backbone: putting everything together](#backbone-putting-everything-together)
+  * [Last Thoughts: Current State and Future Direction](#last-thoughts-current-state-and-future-direction)
+  * [Authors](#authors)
 
-	Maybe some links about inertia focusing?  
-	Maybe link to Annie's paper?
+## Background Information
 
- - **Neural Networks**:
+ ### Inertial Focusing and Previous Work
 
-	Link to Neural Network in a Nutshell presentation by Diego  
-	Philosophy behind synthetic data for training
+Maybe some links about inertia focusing?  
+Maybe link to Annie's paper?
 
+ #### Neural Networks
+Link to Neural Network in a Nutshell presentation by Diego  
+Philosophy behind synthetic data for training  
 
-	What does the data look like
-	Some links about neural networks
+What does the data look like  
+Some links about neural networks  
 
- - **About GitHub**:
-	 what
-	 Make sure you familiarize yourself with the git workflow.
+  #### About GitHub:
+what  
+Make sure you familiarize yourself with the git workflow.  
 
- - **About this repo**:
-	  structure of repo
+  #### About this repo:
+structure of repo  
 
+[Back to top](#table-of-contents)
 
 ## Getting Started
 
@@ -69,6 +86,8 @@ The first thing you'll need to do is **check all the directories** and make the 
  - [*code\UNET\generate_fake.m*](https://github.com/ijungsj/Asymmetric-Particles/tree/master/code/UNET/generate_fake.m) (only if you're generating segmentation training data)
 
 The main code you need to execute if you have trained models is *backbone\predict.py*. It is **best to run line-by-line** (in the style of [Jupyter](https://jupyter.org) or [Hydrogen](https://nteract.gitbooks.io/hydrogen/)) and check the outputs as you go.
+
+[Back to top](#table-of-contents)
 
 ## Unravelling the Code
 
@@ -133,10 +152,10 @@ This will generate 5120 images with a number of 0 to 7 particles, which can eith
 It's easy to add more particles (+, x, s...) by cropping them and making new folders with the same structure.
 
 ***The Model***:  
-Defined in [code\UNET\UNET_model.py](https://github.com/ijungsj/Asymmetric-Particles/tree/master/code/UNET/UNET_model.py), based on the [UNET architecture](https://arxiv.org/pdf/1505.04597.pdf). This file also defines other loss functions (mainly used for multiclass segmentation), such as the [Tversky loss](https://arxiv.org/abs/1706.05721). For binary segmentation, binary crossentropy works fine.
+Defined in [*code\UNET\UNET_model.py*](https://github.com/ijungsj/Asymmetric-Particles/tree/master/code/UNET/UNET_model.py), based on the [UNET architecture](https://arxiv.org/pdf/1505.04597.pdf). This file also defines other loss functions (mainly used for multiclass segmentation), such as the [Tversky loss](https://arxiv.org/abs/1706.05721). For binary segmentation, binary crossentropy works fine.
 
 ***The Training***:  
-Defined in [code\UNET\train_segmentation.py](https://github.com/ijungsj/Asymmetric-Particles/tree/master/code/UNET/train_segmentation.py). Mainly follows the Keras workflow (below, [1-5](#workflow)) and needs the following parameters:
+Defined in [*code\UNET\train_segmentation.py*](https://github.com/ijungsj/Asymmetric-Particles/tree/master/code/UNET/train_segmentation.py). Mainly follows the Keras workflow (below, [1-5](#workflow)) and needs the following parameters:
 ```python
 data_size = 5170 		# total number of frames for training  
 test_size = 2560 		# total number of frames for testing
@@ -147,15 +166,15 @@ resize = (64,640)			# new dimensions for the frame (raw is 128x1280)
 weights = 'code/UNET/UNET_bin.h5' 	# where to save the weights after training is complete
 ```
 #### Workflow:
- 1. make ImageDataGenerator/s (rescale the grayscale images to 0-1, make sure mask are binary (or not, if doing multiclass))
- 2. call flow_from_directory (point to data folder, resize, do one hot-encoding)
- 3. define callbacks
+ 1. make ``ImageDataGenerator``/s (rescale the grayscale images to 0-1, make sure mask are binary (or not, if doing multiclass))
+ 2. call ``flow_from_directory`` (point to data folder, resize, do one hot-encoding)
+ 3. define ``callbacks``
  4. make UNET model
- 5. call fit_generator (actually train the model)
+ 5. call ``fit_generator`` (actually train the model)
 
-You can then visualize the training curve, see the output images, and the activations for each layer. Check the end of the script as well as [code\UNET\visualize.py](https://github.com/ijungsj/Asymmetric-Particles/tree/master/code/UNET/visualize.py)
+You can then visualize the training curve, see the output images, and the activations for each layer. Check the end of the script as well as [*code\UNET\visualize.py*](https://github.com/ijungsj/Asymmetric-Particles/tree/master/code/UNET/visualize.py)
 
-Beware, I modified the original Keras files (mainly ImageDataGenerator and flow_from_directory) to add aditional functionality. Everything is self-contained in [code\UNET\image.py](https://github.com/ijungsj/Asymmetric-Particles/tree/master/code/UNET/image.py), although very lengthy and perhaps messy. I would recommend looking at the Keras documentation and source files first before digging into it.
+Beware, I modified the original Keras files (mainly ImageDataGenerator and flow_from_directory) to add aditional functionality. Everything is self-contained in [*code\UNET\image.py*](https://github.com/ijungsj/Asymmetric-Particles/tree/master/code/UNET/image.py), although very lengthy and perhaps messy. I would recommend looking at the Keras documentation and source files first before digging into it.
 
 ### Particle classification
 The scripts and weights for particle classification should be in [*code\ClassNet*](https://github.com/ijungsj/Asymmetric-Particles/tree/master/code/ClassNet), whereas the data is kept in _code\UNET\data\synthetic\particle\masks\\_ (basically the binary version of the cropped images used for UNET).
@@ -164,10 +183,10 @@ The scripts and weights for particle classification should be in [*code\ClassNet
 Basically just those binary images. In this case, we do data augmentation on the fly, before feeding the data to fit_generator. More details in the training section below.
 
 ***The Model***:  
-Defined in [code\ClassNet\ClassNet_model.py](https://github.com/ijungsj/Asymmetric-Particles/tree/master/code/ClassNet/ClassNet_model.py), just a few convolutional layers and dense layers (could be optimized). This file also contains other losses ("fake_tversky" only cares about false negatives).
+Defined in [*code\ClassNet\ClassNet_model.py*](https://github.com/ijungsj/Asymmetric-Particles/tree/master/code/ClassNet/ClassNet_model.py), just a few convolutional layers and dense layers (could be optimized). This file also contains other losses ("fake_tversky" only cares about false negatives).
 
 ***The Training***:  
-Defined in [code\ClassNet\train_classification.py](https://github.com/ijungsj/Asymmetric-Particles/tree/master/code/ClassNet/train_classification.py). Mainly follows the same Keras workflow (above, [1-5](#workflow)) and needs the following parameters:
+Defined in [*code\ClassNet\train_classification.py*](https://github.com/ijungsj/Asymmetric-Particles/tree/master/code/ClassNet/train_classification.py). Mainly follows the same Keras workflow (above, [1-5](#workflow)) and needs the following parameters:
 ```python
 path = '.../AsymParticles/code/UNET/data/synthetic/particles/masks/'
 data_size = 150
@@ -181,25 +200,67 @@ The only change to the workflow is the ImageDataGenerator, to which now we pass 
 
 ### Particle orientation
 
-Explain what these tests test and [why](#last-thoughts-current-state-and-future-direction)
+Everything pertaining to finding the particle orientation should be in [*code\RotNet*](https://github.com/ijungsj/Asymmetric-Particles/tree/master/code/RotNet) (data folder, weights folder, and several scripts).
 
+***The Data***:  
+Binary images of particles oriented at 0º degrees (take the binary images and rotate them by hand using a photo editor). We also do data augmentation on the fly, before feeding the data to fit_generator, this way we can generate particles in any 360º degrees. More details in the training section below.
+
+***The Model***:  
+Defined in [*code\RotNet\RotNet_model.py*](https://github.com/ijungsj/Asymmetric-Particles/tree/master/code/RotNet/RotNet_model.py), following [this article](https://d4nst.github.io/2017/01/12/image-orientation/). The utility functions from the article are implemented under  [*code\RotNet\utils.py*](https://github.com/ijungsj/Asymmetric-Particles/tree/master/code/RotNet/utils.py)
+
+***The Training***:  
+Defined in [*code\RotNet\train_classification.py*](https://github.com/ijungsj/Asymmetric-Particles/tree/master/code/ClassNet/train_classification.py). Mainly follows the same Keras workflow (above, [1-5](#workflow)) and needs the following parameters:
+```python
+path = '.../AsymParticles/code/RotNet/data/stock''
+nb_train_samples = 92
+BATCH_SIZE = 6
+nb_epoch = 500
+resize = (32,32)
+weights = 'code/RotNet/weights/RotNet_wNoise.h5'
+```
+The only change to the workflow is the ``ImageDataGenerator``, to which now we pass a post-processing function (applied after the image are rotated) that transforms and adds noise to the binary images (very similar to what we do in classification). ``flow_from_directory`` takes care of the labels automatically.
+There's also *train_regression.py*, but it seems to perform worse than classification.
 
 ### Backbone: putting everything together
+Now it's time to put everything together. The worflow followed in [*code\backbone\predict.py*](https://github.com/ijungsj/Asymmetric-Particles/tree/master/code/backbone/predict.py) goes as such:
 
-Explain what these tests test and [why](#last-thoughts-current-state-and-future-direction)
+ 1. define paths to data and weights, define parameters for the models (classes, resize...)
+ 2. make ``ImageDataGenerator`` (rescale the grayscale images to 0-1), call ``flow_from_directory`` to get the raw .tifs
+ 3. define UNET model; apply model to frames with ``predict_generator``
+ 4. check output, save if necessary
+ 5. define ClassNet model, define RotNet model
+ 6. extract objects and info (COM, area, class, orientation) from frames  with [``get_objects``](#1)
+ 7. check output, save if necessary
+ 8. concatenate particles across frames with [``get_trajectories``](#2)
+ 9. check output, save if necessary
+ 10. do basic analysis (plotting and fitting)
+ 11. do full analysis (not implemented, [more on this later](#last-thoughts-current-state-and-future-direction))
+
+The script imports [*code\backbone\pipeline.py*](https://github.com/ijungsj/Asymmetric-Particles/tree/master/code/backbone/pipeline.py)  and [*code\backbone\data_vis_tools.py*](https://github.com/ijungsj/Asymmetric-Particles/tree/master/code/backbone/data_vis_tools.py) for things such as finding objects, concatenating objects, plotting data, and making animations. This separation increases readability and modularity, and should be enforced (there are still code blocks that could be moved from *predict.ty* to other scripts).
+
+The main parameters for the script are kept at the top (paths, classes, data size...), but there are other parameters for defined in line that will have to be tuned for each movie.
+
+[Back to top](#table-of-contents)
+
 
 
 ## Last Thoughts: Current State and Future Direction
 
-matlab to python to generate images on the fly
-decapricate visualize.py, port to data_vis_tools.py
-annies work
-completly getting rid of classification
-ignoring UFOs in segmentation
-thoughts on using synthetic data
-using autoencoders
+matlab to python to generate images on the fly  
+decapricate visualize.py, port to data_vis_tools.py  
+annies work  
+completely getting rid of classification  
+ignoring UFOs in segmentation  
+thoughts on using synthetic data  
+using autoencoders  
+restructuring and normalizing   
+full analysis should look like  
+
+[Back to top](#table-of-contents)
 
 
 ## Authors
 
-* **Diego Alba** - *Initial work* - [GitHub](https://github.com/DIEGOA363) [LinkedIn](https://www.linkedin.com/in/dalbabu/)
+* **Diego Alba** - *foundational work* - [GitHub](https://github.com/DIEGOA363) [LinkedIn](https://www.linkedin.com/in/dalbabu/)
+
+[Back to top](#table-of-contents)

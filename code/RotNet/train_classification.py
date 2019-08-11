@@ -20,6 +20,7 @@ nb_train_samples = 92
 BATCH_SIZE = 6
 nb_epoch = 500
 resize = (32,32)
+weights = 'code/RotNet/weights/RotNet_wNoise.h5'
 
 def noise(imgs):
 
@@ -90,8 +91,8 @@ test_img_generator = img_train.flow_from_directory(
 #     preprocess_func=binarize_images
 # )
 
-callbacks = [ModelCheckpoint('code/RotNet/weights/RotNet_wNoise.h5', verbose=1, save_best_only=True, save_weights_only=True,monitor='loss'),
-                ReduceLROnPlateau(monitor='loss', factor=0.75,patience=50,mdoe='min',verbose=1,min_lr=10^-6)]
+callbacks = [ModelCheckpoint(weights, verbose=1, save_best_only=True, save_weights_only=True,monitor='loss'),
+                ReduceLROnPlateau(monitor='loss', factor=0.75,patience=50,mode='min',verbose=1,min_lr=10^-6)]
 rnn = rotnet(classes = 360)
 h = rnn.fit_generator(
     train_img_generator,

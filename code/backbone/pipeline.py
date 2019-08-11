@@ -8,8 +8,29 @@ for i in range(1):
 
 def get_objects(y_pred, class_model, rot_model, resize = None, min_size = 66,max_size=300):
     """
-    takes output of UNET ( np.array of (batch_size,img_dim,img_dim,classes) ) and produces
-    input for RotNet (np.array of (num_objs,resize,resize,1) ), which are all bounding squares
+    takes output of UNET ( np.array of (batch_size,img_dim,img_dim,classes) ) and returns cropped particles (objects)
+    and information (info) about each of them in the following order:
+
+    info index: [0 1 2  3 4 5 6 7 8   9   10 11 12]
+       meaning: [i,k,c,pc,A,x,y,w,h,com1,com2,a,pa]
+
+       i: frame number
+       k: particle number in frame
+       c: class of particle
+      pc: probability of class
+       A: area of particle
+       x: x-coordinate for minimum bounding box
+       y: y-coordinate for minimum bounding box
+       w: width for minimum bounding box
+       h: height for minimum bounding box
+    com1: x-coordinate for center of mass
+    com2: y-coordinate for center of mass
+       a: angle of rotation
+      pa: probability of angle
+
+    it needs a ClassNet model and a RotNet model
+    it can also filter particles based on size (area)
+
     """
     batch_size,H,W = y_pred.shape
     objects = list()
@@ -56,8 +77,20 @@ def get_objects(y_pred, class_model, rot_model, resize = None, min_size = 66,max
     info = np.insert(info, 3, np.max(predictions,1),1)
     return objects, info
 
-def get_trajectories(info, distance = 54, max_memory = 3):
+def get_trajectories(info, distance = 65, max_memory = 3):
+    """
+    takes output of get_objects (info), minum "distance", and memory,  and returns a list of particles through frames (traj)
+    i.e. traj[i] contains all information about the ith particle,
 
+    "distance" is calculated like this: sqrt(x^2+(y+30)^2), so that more weight is given to the y axis
+    (particles should move more on the x-axis from frame to frame, if y-axis changes too much it could be a different particle)
+
+    memory is the number of particles from the previous frame/s that could potentially be the same as the new particle
+    (mainly needed in case some frames are skipped and because there can be more than one particle per frame)
+
+    finding the right distance and memory for each movie is very empirical as of right now
+
+    """
     traj = []
     memory = []
     i = 0
