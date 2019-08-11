@@ -1,3 +1,4 @@
+
 # Asymmetric Particles
 
 The aim of this project is to study the **dynamic behavior of asymmetric particles** under **inertial focusing** conditions (high Re) in microchannels. Properties such as focusing position/s, angular velocity, and preferred orientation, could shine a light on the forces that govern this phenomenon, and inspire novel bioassays based on asymmetric particles.
@@ -98,6 +99,8 @@ This section, as well as the code, is broken up into the following topics:
  3. [Particle classification](#particle-segmentation)
  4. [Particle orientation](#particle-orientation)
  5. [Backbone: putting everything together](#backbone-putting-everything-together)
+
+The [data](#the-raw-data-and-the-training-data) and [backbone](#backbone-putting-everything-together) are the most important, the others contain information about the NN model definition and the training procedure.
 
 ### The raw data and the training data
 
@@ -229,16 +232,16 @@ Now it's time to put everything together. The worflow followed in [*code\backbon
  3. define UNET model; apply model to frames with ``predict_generator``
  4. check output, save if necessary
  5. define ClassNet model, define RotNet model
- 6. extract objects and info (COM, area, class, orientation) from frames  with [``get_objects``](#1)
+ 6. extract objects and info (COM, area, class, orientation) from frames  with [``get_objects``](https://github.com/ijungsj/Asymmetric-Particles/tree/master/code/backbone/pipeline.py)
  7. check output, save if necessary
- 8. concatenate particles across frames with [``get_trajectories``](#2)
+ 8. concatenate particles across frames with [``get_trajectories``](https://github.com/ijungsj/Asymmetric-Particles/tree/master/code/backbone/pipeline.py)
  9. check output, save if necessary
  10. do basic analysis (plotting and fitting)
  11. do full analysis (not implemented, [more on this later](#last-thoughts-current-state-and-future-direction))
 
 The script imports [*code\backbone\pipeline.py*](https://github.com/ijungsj/Asymmetric-Particles/tree/master/code/backbone/pipeline.py)  and [*code\backbone\data_vis_tools.py*](https://github.com/ijungsj/Asymmetric-Particles/tree/master/code/backbone/data_vis_tools.py) for things such as finding objects, concatenating objects, plotting data, and making animations. This separation increases readability and modularity, and should be enforced (there are still code blocks that could be moved from *predict.ty* to other scripts).
 
-The main parameters for the script are kept at the top (paths, classes, data size...), but there are other parameters for defined in line that will have to be tuned for each movie.
+The main parameters for the script are kept at the top (paths, classes, data size...), but there are other parameters for defined in line that will have to be tuned for each movie, mainly when calling [``get_objects``](https://github.com/ijungsj/Asymmetric-Particles/tree/master/code/backbone/pipeline.py) and [``get_trajectories``](https://github.com/ijungsj/Asymmetric-Particles/tree/master/code/backbone/pipeline.py).
 
 [Back to top](#table-of-contents)
 

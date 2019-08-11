@@ -35,18 +35,19 @@ def get_objects(y_pred, class_model, rot_model, resize = None, min_size = 66,max
     batch_size,H,W = y_pred.shape
     objects = list()
     info = list()
-    for i in range(batch_size):
+
+    for i in range(batch_size):                                                             # loop through frames
         bin = y_pred[i,:,:][:,:,np.newaxis].astype('uint8')
-        contours = cv2.findContours(bin, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+        contours = cv2.findContours(bin, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)          # find contours of particles in frame
         cnts = contours[0]
-        if len(cnts)>0:
-            boundingBoxes = [cv2.boundingRect(c) for c in cnts]
+        if len(cnts)>0:                                                                     # check if there are any particles
+            boundingBoxes = [cv2.boundingRect(c) for c in cnts]                             # get the entire bounding boxes
             cnts, boundingBoxes = zip(*sorted(zip(cnts, boundingBoxes),key=lambda b:b[1][1], reverse=False))
 
-            for k in range(len(cnts)):
-                A = cv2.contourArea(cnts[k])
-                if A > min_size and A < max_size:
-                    com = np.mean(cv2.findNonZero(cv2.drawContours(np.zeros_like(bin).astype('uint8'), contours[0], k, 255, -1)).squeeze(),axis=0)
+            for k in range(len(cnts)):                                                      # loop through found particles
+                A = cv2.contourArea(cnts[k])                                                # get area of particle
+                if A > min_size and A < max_size:                                           # filter by area
+                    com = np.mean(cv2.findNonZero(cv2.drawContours(np.zeros_like(bin).astype('uint8'), contours[0], k, 255, -1)).squeeze(),axis=0) # find com
                     if not isinstance(com,(np.ndarray,)):
                         break
                     x,y,w,h= boundingBoxes[k]
@@ -56,10 +57,10 @@ def get_objects(y_pred, class_model, rot_model, resize = None, min_size = 66,max
                         y = y-1
                     w = w+1
                     h = h+1
-                    obj = bin[y:(y+h+1),x:(x+w+1)]
+                    obj = bin[y:(y+h+1),x:(x+w+1)]                                          # extract particle based on bounding box, save as obj
 
                     if resize is not None:
-                        obj = cv2.resize(obj,resize)
+                        obj = cv2.resize(obj,resize)                                        # resize object to make sure everyhting is the same shape
 
                     objects.append(obj)
                     info.append([i,k,A,x,y,w,h,com[0],com[1]])
@@ -68,11 +69,11 @@ def get_objects(y_pred, class_model, rot_model, resize = None, min_size = 66,max
         objects = np.array(objects)[...,np.newaxis]
     info = np.array(info)
 
-    predictions = rot_model.predict(objects.astype('uint8'))
+    predictions = rot_model.predict(objects.astype('uint8'))                                 # use RotNet to calculate orientation
     info = np.append(info, np.argmax(predictions,-1)[...,np.newaxis],1)
     info = np.append(info, np.max(predictions,1)[...,np.newaxis],1)
 
-    predictions = class_model.predict(objects.astype('uint8'))
+    predictions = class_model.predict(objects.astype('uint8'))                               # use ClassNet to classify paticle
     info = np.insert(info, 2, np.argmax(predictions,1),1)
     info = np.insert(info, 3, np.max(predictions,1),1)
     return objects, info
@@ -97,7 +98,7 @@ def get_trajectories(info, distance = 65, max_memory = 3):
     idx = 0
     labels = []
     all_dists = np.array([])
-    while i  < max(info[:,0]).astype(int):
+    while i  < max(info[:,0]).astype(int):                                                     # loop through particles (really we loop through frames, we change i inside the loop)
     # debugging print outs and plots
     # for z in range(1):
 
@@ -110,22 +111,23 @@ def get_trajectories(info, distance = 65, max_memory = 3):
         dummy = list(labels)
         reset = idx
         available = np.ones(len(memory), dtype=bool)
-        for f in range(sum(info[:,0] == i)):
+
+        for f in range(sum(info[:,0] == i)):                                                   # loop through particles in the same frame
             idx = reset+f
             # print(['idx',idx,'i',i,'f',f,'total',sum(info[:,0] == i)])
             # plt.plot(info[idx,9],info[idx,10],'*')
-            if memory == []:
+            if memory == []:                                                                   # if memory is empty, add particle as either the first particle of the movie, or as a new particle
                 traj.append(info[idx,:][np.newaxis])
                 if i == 0:
                     labels.append(0)
                 else:
                     labels.append(max(labels)+1)
                 # print(['empty memory, new object',labels[-1]])
-            else:
+            else:                                                                              # if memory is not empty, find math old particle and new partilce based on distance
                 dists = np.zeros(len(memory))
                 for j in range(len(memory)):
                     # print([info[idx,9],info[idx,10]],[memory[j][9],memory[j][10]])
-                    if available[j]:
+                    if available[j]:                                                           # particles can only be mathced once
                         dists[j] = ( (info[idx,9] - memory[j][9])**2 + (30*(info[idx,10] - memory[j][10]))**2)**(1/2)
                     else:
                         dists[j] = np.inf
@@ -135,17 +137,18 @@ def get_trajectories(info, distance = 65, max_memory = 3):
                 # print([dummy,dummy[-len(memory):]])
                 label = dummy[-len(memory):][np.argmin(dists)]
                 all_dists = np.append(all_dists,min(dists))
-                if min(dists) < distance:
+
+                if min(dists) < distance:                                                      # if the distance is small enough, it is the same particle
                     traj[label] = np.append(traj[label],info[idx,:][np.newaxis],axis=0)
                     # print(['append to old object',label])
                     labels.append(label)
                     available[np.argmin(dists)] = False
-                else:
+                else:                                                                          # if the distance is too large, they are different particles
                     traj.append(info[idx,:][np.newaxis])
                     labels.append(max(labels)+1)
                     # print(['too far, new object',labels[-1]])
 
-        if sum(info[:,0] == i) > 0:
+        if sum(info[:,0] == i) > 0:                                                            # remove old and add new particles to the memory, based on the memory size
             if len(memory) >= max_memory:
                 for f in range(sum(info[:,0] == i)):
                     if memory != []:
