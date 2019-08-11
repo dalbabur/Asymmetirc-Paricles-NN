@@ -34,18 +34,16 @@ Maybe some links about inertia focusing?
 Maybe link to Annie's paper?
 
  #### Neural Networks
-Link to Neural Network in a Nutshell presentation by Diego  
-Philosophy behind synthetic data for training  
+Link to Neural Network in a Nutshell presentation by Diego
+Link to final presentation by Diego
 
-What does the data look like  
 Some links about neural networks  
 
   #### About GitHub:
-what  
-Make sure you familiarize yourself with the git workflow.  
+GitHub is a tool for development and version control. It makes storing and sharing the code very easy, and facilitates collaboration. Make sure you familiarize yourself with the [git workflow](https://guides.github.com/introduction/flow/).  
 
   #### About this repo:
-structure of repo  
+Every major function of the code already has its own branch. New features or fixes should be implemented on the specific branch, discussed, and the merged with the master. Then all branches can be updated from master.
 
 [Back to top](#table-of-contents)
 
@@ -239,9 +237,11 @@ Now it's time to put everything together. The worflow followed in [*code\backbon
  10. do basic analysis (plotting and fitting)
  11. do full analysis (not implemented, [more on this later](#last-thoughts-current-state-and-future-direction))
 
-The script imports [*code\backbone\pipeline.py*](https://github.com/ijungsj/Asymmetric-Particles/tree/master/code/backbone/pipeline.py)  and [*code\backbone\data_vis_tools.py*](https://github.com/ijungsj/Asymmetric-Particles/tree/master/code/backbone/data_vis_tools.py) for things such as finding objects, concatenating objects, plotting data, and making animations. This separation increases readability and modularity, and should be enforced (there are still code blocks that could be moved from *predict.ty* to other scripts).
+The script imports [*code\backbone\pipeline.py*](https://github.com/ijungsj/Asymmetric-Particles/tree/master/code/backbone/pipeline.py)  and [*code\backbone\data_vis_tools.py*](https://github.com/ijungsj/Asymmetric-Particles/tree/master/code/backbone/data_vis_tools.py) for support functions such as finding objects, concatenating objects, plotting data, and making animations. This separation increases readability and modularity, and should be enforced (there are still code blocks that could be moved from *predict.ty* to other scripts).
 
 The main parameters for the script are kept at the top (paths, classes, data size...), but there are other parameters for defined in line that will have to be tuned for each movie, mainly when calling [``get_objects``](https://github.com/ijungsj/Asymmetric-Particles/tree/master/code/backbone/pipeline.py) and [``get_trajectories``](https://github.com/ijungsj/Asymmetric-Particles/tree/master/code/backbone/pipeline.py).
+
+Right now the analysis is done on trajectories where one dimension is the length of the channel, but it may better and more insightful to do it over time or full rotations.
 
 [Back to top](#table-of-contents)
 
