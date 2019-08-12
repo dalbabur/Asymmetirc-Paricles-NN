@@ -1,15 +1,15 @@
 tic
-generate = 5120*3;
-max_objs = 7;
+generate = 5*3;
+max_objs = 10;
 folder = '\data\train';
-noise = 0;
+noise = 1;
 transform = 1;
 
 path = 'C:\Users\Diego\Documents\MATLAB\JHU\HUR\asymmetricParticles\AsymParticles\code\UNET';
 bgpath = [path,'\data\synthetic\background\'];
-Upath = [path,'\data\synthetic\U\object\'];
-Lpath = [path,'\data\synthetic\L\object\'];
-UFOpath = [path,'\data\synthetic\UFOs\object\'];
+Upath = [path,'\data\synthetic\particles\U\'];
+Lpath = [path,'\data\synthetic\particles\L\'];
+UFOpath = [path,'\data\synthetic\particles\UFOs\'];
 Shadowpath = [path,'\data\synthetic\Shadow\'];
 
 bg = dir([bgpath '*.tif']);
@@ -35,7 +35,6 @@ for g = 1:generate
     % pick background
     b = bgs{randi([1 numel(bg)])};
 
-    if noise == 1, if rand(1) > 0.5, b = imnoise(b, 'poisson'); end, end
     if transform == 1, if rand(1) > 0.5, b = fliplr(b); end, end
 
     % pick how many of each obj, and which
@@ -131,14 +130,15 @@ for g = 1:generate
             bin = imresize(bin,s,'OutputSize',[m,n],'method','nearest');
         end
     end
+    if noise == 1, if rand(1) > 0.5, b2 = imnoise(b2, 'poisson'); end, end
 
-% % figure
-% % subplot(2,1,1)
-% % imshow(b2)
-% % subplot(2,1,2)
-% % imshow(bin)
+figure
+subplot(2,1,1)
+imshow(b2)
+subplot(2,1,2)
+imagesc(bin)
 
-imwrite(b2,[path, folder,'/img/frames/Augmented2/',num2str(g),'.tif'])
-imwrite(uint8(bin),[path, folder,'/mask/frames/Augmented2/',num2str(g),'.tif'])
+% imwrite(b2,[path, folder,'/img/frames/Augmented2/',num2str(g),'.tif'])
+% imwrite(uint8(bin),[path, folder,'/mask/frames/Augmented2/',num2str(g),'.tif'])
 end
 toc
